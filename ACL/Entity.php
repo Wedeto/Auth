@@ -23,14 +23,9 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace WASP\ACL;
+namespace WASP\Auth\ACL;
 
-require_once "Hierarchy.php";
-require_once "Role.php";
-require_once "Rule.php";
-require_once "Exception.php";
-require_once "IRuleLoader.php";
-require_once "IActionValidator.php";
+use WASP\DB\DAO;
 
 /**
  * An Entity is any object or class of objects that rules can be applied to.
@@ -190,7 +185,10 @@ class Entity extends Hierarchy
         return $this->rules;
     }
 
-    public static function generateID(\Model\DAO $object)
+    /**
+     * Generate a ID based on the provided DAO object
+     */
+    public static function generateID(DAO $object)
     {
         $id = $object->getID();
         if (!\is_int_val($id) || $id === 0 || $id === "0")
