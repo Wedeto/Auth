@@ -227,11 +227,12 @@ class Authentication
      */
     public function verify(string $password, string $hash)
     {
-        if (substr($password, 0, 1) !== "$")
+        if (substr($hash, 0, 1) !== "$")
         {
             $salt = $this->config->dget('salt', '');
-            $hash = hash('sha256', $password . $salt);
-            return $password === $hash;
+            $pw_hash = hash('sha256', $password . $salt);
+            echo "$pw_hash \n";
+            return $pw_hash === $hash;
         }
 
         return password_verify($password, $hash);
