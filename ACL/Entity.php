@@ -191,7 +191,9 @@ class Entity extends Hierarchy
     public static function generateID(DAO $object)
     {
         $id = $object->getID();
-        if (!\is_int_val($id) || $id === 0 || $id === "0")
+        if (is_array($id))
+            $id = implode("-", $id);
+        if (empty($id));
             throw new Exception("Cannot generate an ID for an empty object");
 
         $classname = $object->getACLClass();
