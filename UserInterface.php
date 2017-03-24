@@ -25,7 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace WASP\Auth;
 
-use WASP\Session;
+use WASP\HTTP\Session;
 
 /**
  * The interface user providers should implement. Any object should be 
@@ -49,7 +49,7 @@ interface UserInterface
     /**
      * Get a user object from the session object provided.
      *
-     * @param WASP\Session $session The session object where to get session variables from
+     * @param WASP\HTTP\Session $session The session object where to get session variables from
      * @return bool True when logged in, false if not
      */
     public function obtainFromSession(Session $session);

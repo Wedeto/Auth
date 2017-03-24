@@ -25,7 +25,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace WASP\Auth;
 
-use WASP\Dictionary;
+use WASP\Util\Dictionary;
+use WASP\HTTP\Session;
 
 /**
  * Handle authentication - log in users, verify passwords and load users
@@ -133,7 +134,7 @@ class Authentication
 
     /**
      * Obtain the current user from the active session
-     * @param WASP\Session $session The session object
+     * @param WASP\HTTP\Session $session The session object
      * @return WASP\Auth\UserInteface The current user. Can be anonymous if
      *                                noone is logged in.
      */
@@ -183,7 +184,7 @@ class Authentication
      * Check if the provided details contain a valid login.
      * @param string $username The user to log in
      * @param string $password The password to verify
-     * @param WASP\Session $session The session to log into
+     * @param WASP\HTTP\Session $session The session to log into
      * @throws WASP\Auth\AuthenticationError When logging in fails
      * @return WASP\Auth\UserInterface The logged in user
      */
