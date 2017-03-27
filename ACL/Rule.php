@@ -257,7 +257,7 @@ class Rule
     /**
      * Set the action validator used to validate actions on rules.
      */
-    public static function setActionValidator(IActionValidator $validator)
+    public static function setActionValidator(ActionValidatorInterface $validator)
     {
         self::$action_validator = $validator;
     }

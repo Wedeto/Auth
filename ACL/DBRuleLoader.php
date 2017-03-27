@@ -30,7 +30,7 @@ use WASP\DB\ACLRule;
 /**
  * A RuleLoader that loads rules from the database using the Model\ACLRule class;
  */
-class DBRuleLoader implements IRuleLoader
+class DBRuleLoader implements RuleLoaderInterface
 {
     /**
      * Loads the rules for the specified entity from the database.

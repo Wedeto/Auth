@@ -37,7 +37,7 @@ class RuleLoader
         $this->instance->loadRules($entity_id);
     }
 
-    public static function setLoader(IRuleLoader $loader)
+    public static function setLoader(RuleLoaderInterface $loader)
     {
         $this->instance = $loader;
     }

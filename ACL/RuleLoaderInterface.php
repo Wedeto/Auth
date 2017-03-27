@@ -25,12 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace WASP\Auth\ACL;
 
-interface IActionValidator
+interface RuleLoaderInterface
 {
-    /**
-     * This method should check whether the specified action is valid or not.
-     * @return true|string True when it is a valid action, or a string explaining the error when it is not valid.
-     */
-    public function isValid($action);
+    public function loadRules($entity_id);
 }
-
