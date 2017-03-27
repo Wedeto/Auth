@@ -28,7 +28,7 @@ namespace WASP\Auth;
 use InvalidArgumentException;
 use UnderflowException;
 use WASP\IOException;
-use function WASP\is_array_like;
+use WASP\Util\Functions as WF;
 
 /**
  * Generate random passwords or passphrases.
@@ -48,7 +48,7 @@ class PasswordGenerator
      */
     public function addCharacters($chars)
     {
-        if (is_array_like($chars))
+        if (WF::is_array_like($chars))
         {
             foreach ($chars as $char)
                 $this->characters[$char] = true;

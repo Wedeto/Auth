@@ -92,7 +92,7 @@ class Rule
      * @param $policy integer One of Rule::UNDEFINED, Rule::ALLOW or Rule::DENY
      * @throws WASP\ACL\Exception When one of the setters throws an exception
      */
-    public function __construct($entity_id, $role_id, $action, $policy)
+    public function __construct($entity_id, $role_id, string $action, int $policy)
     {
         $this->setEntity($entity);
         $this->setRole($role);
@@ -175,7 +175,7 @@ class Rule
      * @param policy integer Should be one of Rule::ALLOW, Rule::DENY or Rule::UNDEFINED
      * @throws WASP\ACL\Exception When the Rule is not ALLOW, DENY or UNDEFINED
      */
-    public function setPolicy($policy)
+    public function setPolicy(int $policy)
     {
         if (!($policy === Rule::ALLOW || $policy === Rule::DENY || $policy === Rule::INHERIT || $policy == Rule::NOINHERIT))
             throw new Exception("Policy must be either Rule::ALLOW, Rule::DENY, Rule::INHERIT or Rule::NOINHERIT");
@@ -198,7 +198,7 @@ class Rule
      * @param $action scalar The action this Rule has a policy on.
      * @throws WASP\ACL\Exception When the action is not a scalar
      */
-    public function setAction($action)
+    public function setAction(string $action)
     {
         if (!is_scalar($action))
             throw new Exception("Action must be a scalar");
@@ -224,7 +224,7 @@ class Rule
      * @return The value for the property
      * @throws WASP\ACL\Exception When the field does not exist
      */
-    public function __get($field)
+    public function __get(string $field)
     {
         if (property_exists($this, $field))
         {
