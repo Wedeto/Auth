@@ -28,6 +28,11 @@
         {
             "type": "vcs",
             "url": "https://github.com/WASP-Systems/HTTP"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/WASP-Systems/FileFormats"
         }
-    ]
+    ],
+    "minimum-stability": "dev"
 }
