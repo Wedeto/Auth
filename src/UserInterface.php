@@ -1,6 +1,6 @@
 <?php
 /*
-This is part of WASP, the Web Application Software Platform.
+This is part of Wedeto, the WEb DEvelopment TOolkit.
 It is published under the MIT Open Source License.
 
 Copyright 2017, Egbert van der Wal
@@ -23,9 +23,9 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace WASP\Auth;
+namespace Wedeto\Auth;
 
-use WASP\HTTP\Session;
+use Wedeto\HTTP\Session;
 
 /**
  * The interface user providers should implement. Any object should be 
@@ -35,21 +35,21 @@ use WASP\HTTP\Session;
  */
 interface UserInterface
 {
-    const ANONYMOUS_USER = "_WASP_ANONYMOUS_";
+    const ANONYMOUS_USER = "_WEDETO_ANONYMOUS_";
 
     /**
      * Attempt to log the user in given the provided username and password.
      *
      * @param string $username The username provided
      * @param string $password The password entered
-     * @throws WASP\Auth\AuthenticationError When login failed
+     * @throws Wedeto\Auth\AuthenticationError When login failed
      */
     public function obtainFromLogin(string $username, string $password);
 
     /**
      * Get a user object from the session object provided.
      *
-     * @param WASP\HTTP\Session $session The session object where to get session variables from
+     * @param Wedeto\HTTP\Session $session The session object where to get session variables from
      * @return bool True when logged in, false if not
      */
     public function obtainFromSession(Session $session);
@@ -59,8 +59,8 @@ interface UserInterface
      * getUserID.
      *
      * @param string $user_id The User ID of the user to load
-     * @return WASP\UserInterface Provides fluent interface
-     * @throws WASP\Auth\NotFoundException When the user does not exist
+     * @return Wedeto\UserInterface Provides fluent interface
+     * @throws Wedeto\Auth\NotFoundException When the user does not exist
      * @see UserInterface::getUserID
      */
     public function obtainByUserID(string $user_id);
@@ -73,7 +73,7 @@ interface UserInterface
     public function isLoggedIn();
 
     /**
-     * @return array A list of WASP\Auth\GroupInterface objects that this user is in
+     * @return array A list of Wedeto\Auth\GroupInterface objects that this user is in
      */
     public function getGroups();
 

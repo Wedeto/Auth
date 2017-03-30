@@ -1,6 +1,6 @@
 <?php
 /*
-This is part of WASP, the Web Application Software Platform.
+This is part of Wedeto, the WEb DEvelopment TOolkit.
 It is published under the MIT Open Source License.
 
 Copyright 2017, Egbert van der Wal
@@ -23,7 +23,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace WASP\Auth;
+namespace Wedeto\Auth;
 
 interface GroupInterface
 {
@@ -37,8 +37,8 @@ interface GroupInterface
      * that is returned by GroupInterface::getGroupID.
      *
      * @param string $group_id The Group ID to load
-     * @return WASP\Auth\GroupInteface Provides fluent interface
-     * @throws WASP\Auth\NotFoundException When the group does not exist
+     * @return Wedeto\Auth\GroupInteface Provides fluent interface
+     * @throws Wedeto\Auth\NotFoundException When the group does not exist
      */
     public function obtainByGroupID(string $group_id);
 
@@ -53,7 +53,7 @@ interface GroupInterface
     public function getGroupId();
     
     /**
-     * @param WASP\Auth\UserInterface The user to check
+     * @param Wedeto\Auth\UserInterface The user to check
      * @return bool True if the specified user is a member of this group, false
      *              if not.
      */

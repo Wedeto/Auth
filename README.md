@@ -1,11 +1,11 @@
-# WASP
-WASP (Web Application Software Platform).
+# Wedeto
+Wedeto (WEb DEvelopment TOolkit)
 
 # Requirements:
 
 php >= 7.0
-WASP\Util
+Wedeto\Util
 
 # License
 
-WASP-Auth is covered by the MIT license.
+Wedeto/Auth is covered by the MIT license.

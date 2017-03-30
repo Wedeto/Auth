@@ -1,6 +1,6 @@
 <?php
 /*
-This is part of WASP, the Web Application Software Platform.
+This is part of Wedeto, the WEb DEvelopment TOolkit.
 It is published under the MIT Open Source License.
 
 Copyright 2017, Egbert van der Wal
@@ -23,7 +23,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace WASP\Auth\ACL;
+namespace Wedeto\Auth\ACL;
 
 /**
  * Base class for Role and Entity that manages the
@@ -130,7 +130,7 @@ abstract class Hierarchy
     /**
      * Set the parent or parents of this element
      * @param $parents mixed One or more parente elements
-     * @throws WASP\ACL\Exception When invalid types of parents are specified
+     * @throws Wedeto\ACL\Exception When invalid types of parents are specified
      */
     public function setParents($parents)
     {

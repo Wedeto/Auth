@@ -1,6 +1,6 @@
 <?php
 /*
-This is part of WASP, the Web Application Software Platform.
+This is part of Wedeto, the WEb DEvelopment TOolkit.
 It is published under the MIT Open Source License.
 
 Copyright 2017, Egbert van der Wal
@@ -23,7 +23,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace WASP\Auth\ACL;
+namespace Wedeto\Auth\ACL;
 
 /**
  * A Rule encapsulates one policy, relating one Role to one Entity, specifying
@@ -90,7 +90,7 @@ class Rule
      * @param $role_id scalar|Role The Role this rule applies to
      * @param $action scalar The action on the Entity this rule has a policy on
      * @param $policy integer One of Rule::UNDEFINED, Rule::ALLOW or Rule::DENY
-     * @throws WASP\ACL\Exception When one of the setters throws an exception
+     * @throws Wedeto\ACL\Exception When one of the setters throws an exception
      */
     public function __construct($entity_id, $role_id, string $action, int $policy)
     {
@@ -105,7 +105,7 @@ class Rule
      * Set the role this Rule applies to. 
      *
      * @param $role_id scalar|Role Either a Role object or a Role-ID
-     * @throws WASP\ACL\Exception When the role is not a Role object or a scalar
+     * @throws Wedeto\ACL\Exception When the role is not a Role object or a scalar
      */
     public function setRole($role_id)
     {
@@ -131,7 +131,7 @@ class Rule
      * Set the entity this Rule applies to
      * 
      * @param $entity_id scalar|Entity Either a Entity object or a Role-ID
-     * @throws WASP\ACL\Exception When the entity is not a Entity object or a scalar
+     * @throws Wedeto\ACL\Exception When the entity is not a Entity object or a scalar
      */
     public function setEntity($entity_id)
     {
@@ -173,7 +173,7 @@ class Rule
     /**
      * Set the policy on the entity
      * @param policy integer Should be one of Rule::ALLOW, Rule::DENY or Rule::UNDEFINED
-     * @throws WASP\ACL\Exception When the Rule is not ALLOW, DENY or UNDEFINED
+     * @throws Wedeto\ACL\Exception When the Rule is not ALLOW, DENY or UNDEFINED
      */
     public function setPolicy(int $policy)
     {
@@ -196,7 +196,7 @@ class Rule
     /**
      * Set the action on the entity
      * @param $action scalar The action this Rule has a policy on.
-     * @throws WASP\ACL\Exception When the action is not a scalar
+     * @throws Wedeto\ACL\Exception When the action is not a scalar
      */
     public function setAction(string $action)
     {
@@ -222,7 +222,7 @@ class Rule
      * Magic getter for all properties of this Rule.
      * @param $field scalar The property to return
      * @return The value for the property
-     * @throws WASP\ACL\Exception When the field does not exist
+     * @throws Wedeto\ACL\Exception When the field does not exist
      */
     public function __get(string $field)
     {

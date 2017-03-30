@@ -1,6 +1,6 @@
 <?php
 /*
-This is part of WASP, the Web Application Software Platform.
+This is part of Wedeto, the WEb DEvelopment TOolkit.
 It is published under the MIT Open Source License.
 
 Copyright 2017, Egbert van der Wal
@@ -23,12 +23,12 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace WASP\Auth;
+namespace Wedeto\Auth;
 
 use InvalidArgumentException;
 use UnderflowException;
-use WASP\IOException;
-use WASP\Util\Functions as WF;
+use Wedeto\IOException;
+use Wedeto\Util\Functions as WF;
 
 /**
  * Generate random passwords or passphrases.
@@ -44,7 +44,7 @@ class PasswordGenerator
     /**
      * Add one or more characters to the list of eligible characters
      * @param string|array $chars The characters to add
-     * @return WASP\Auth\PasswordGenerator Provides fluent interface
+     * @return Wedeto\Auth\PasswordGenerator Provides fluent interface
      */
     public function addCharacters($chars)
     {
@@ -67,7 +67,7 @@ class PasswordGenerator
 
     /**
      * Add the latin alphabet to the list of eligible characters
-     * @return WASP\Auth\PasswordGenerator Provides fluent interface
+     * @return Wedeto\Auth\PasswordGenerator Provides fluent interface
      */
     public function addAlpha()
     {
@@ -76,7 +76,7 @@ class PasswordGenerator
 
     /**
      * Add the numbers 0-9 to the list of elgiible characters
-     * @return WASP\Auth\PasswordGenerator Provides fluent interface
+     * @return Wedeto\Auth\PasswordGenerator Provides fluent interface
      */
     public function addNumbers()
     {
@@ -85,7 +85,7 @@ class PasswordGenerator
 
     /**
      * Add the latin alphabet and numbers to the list of eligible characters
-     * @return WASP\Auth\PasswordGenerator Provides fluent interface
+     * @return Wedeto\Auth\PasswordGenerator Provides fluent interface
      */
     public function addAlnum()
     {
@@ -119,10 +119,10 @@ class PasswordGenerator
      *                     it. Defauls to false
      * @param string $regexp A regular expression to match each word to. Can be
      *                       empty. Defaults to allowing on lowercase latin alphabet.
-     * @return WASP\Auth\PasswordGenerator Provides fluent interface
+     * @return Wedeto\Auth\PasswordGenerator Provides fluent interface
      * @throws InvalidArgumentException When an invalid regular expression is
      *                                  given or no words match it.
-     * @throws WASP\IOException When the file is not readable
+     * @throws Wedeto\IOException When the file is not readable
      */
     public function loadDictionary(string $filename, $append = false, $regexp = "/^[a-z]{4,6}$/")
     {

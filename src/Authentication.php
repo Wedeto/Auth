@@ -1,6 +1,6 @@
 <?php
 /*
-This is part of WASP, the Web Application Software Platform.
+This is part of Wedeto, the WEb DEvelopment TOolkit.
 It is published under the MIT Open Source License.
 
 Copyright 2017, Egbert van der Wal
@@ -23,10 +23,10 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace WASP\Auth;
+namespace Wedeto\Auth;
 
-use WASP\Util\Dictionary;
-use WASP\HTTP\Session;
+use Wedeto\Util\Dictionary;
+use Wedeto\HTTP\Session;
 
 /**
  * Handle authentication - log in users, verify passwords and load users
@@ -63,8 +63,8 @@ class Authentication
     /**
      * Set the UserInterface class that represents users.
      * @param string $classname The class to use for users. This should implement
-     *                          WASP\Auth\UserInterface.
-     * @return WASP\Auth\Authentication Provides fluent interface
+     *                          Wedeto\Auth\UserInterface.
+     * @return Wedeto\Auth\Authentication Provides fluent interface
      */
     public function setUserClass(string $classname)
     {
@@ -77,8 +77,8 @@ class Authentication
     /**
      * Set the GroupInterface class that represents groups.
      * @param string $classname the class to use for gruops. This should implement
-     *                          WASP\Auth\GroupInterface.
-     * @return WASP\Auth\Authentication PRovides fluent interface
+     *                          Wedeto\Auth\GroupInterface.
+     * @return Wedeto\Auth\Authentication PRovides fluent interface
      */
     public function setGroupClass(string $classname)
     {
@@ -90,16 +90,16 @@ class Authentication
 
     /**
      * Get the UserInterface class that represents users.
-     * Defauls to WASP\Auth\Model\User but can be overridden in the config to
+     * Defauls to Wedeto\Auth\Model\User but can be overridden in the config to
      * use alternative authentication - for example integration with different
      * software.
-     * @return string The class implementing WASP\Auth\UserInterface
+     * @return string The class implementing Wedeto\Auth\UserInterface
      */
     protected function getUserClass()
     {
         if ($this->user_class === null)
         {
-            $class = $this->config->dget('user_class', 'WASP\\Auth\\Model\\User');
+            $class = $this->config->dget('user_class', 'Wedeto\\Auth\\Model\\User');
             $class = str_replace('.', '\\', $class);
 
             if (!class_exists($class) || !is_subclass_of($class, UserInterface::class))
@@ -112,16 +112,16 @@ class Authentication
 
     /**
      * Get the UserInterface class that represents users.
-     * Defauls to WASP\Auth\Model\User but can be overridden in the config to
+     * Defauls to Wedeto\Auth\Model\User but can be overridden in the config to
      * use alternative authentication - for example integration with different
      * software.
-     * @return string The class implementing WASP\Auth\UserInterface
+     * @return string The class implementing Wedeto\Auth\UserInterface
      */
     protected function getGroupClass()
     {
         if ($this->group_class === null)
         {
-            $class = $this->config->dget('group_class', 'WASP\\Auth\\Model\\Group');
+            $class = $this->config->dget('group_class', 'Wedeto\\Auth\\Model\\Group');
             $class = str_replace('.', '\\', $class);
 
             if (!class_exists($class) || !is_subclass_of($class, GroupInterface::class))
@@ -134,8 +134,8 @@ class Authentication
 
     /**
      * Obtain the current user from the active session
-     * @param WASP\HTTP\Session $session The session object
-     * @return WASP\Auth\UserInteface The current user. Can be anonymous if
+     * @param Wedeto\HTTP\Session $session The session object
+     * @return Wedeto\Auth\UserInteface The current user. Can be anonymous if
      *                                noone is logged in.
      */
     public function getUserFromSession(Session $session)
@@ -149,8 +149,8 @@ class Authentication
     /**
      * Obtain a user by its user ID. 
      * @param string $userID The User ID to load
-     * @return WASP\Auth\UserInterface The user
-     * @throws WASP\Auth\NotFoundException When the user does not exist
+     * @return Wedeto\Auth\UserInterface The user
+     * @throws Wedeto\Auth\NotFoundException When the user does not exist
      */
     public function getUser(string $userid)
     {
@@ -162,8 +162,8 @@ class Authentication
     /**
      * Obtain a group by its group ID.
      * @param string $groupid The group ID to load
-     * @return WASP\Auth\GroupInterface The loaded group
-     * @throws WASP\Auth\NotFoundException When the group does not exist
+     * @return Wedeto\Auth\GroupInterface The loaded group
+     * @throws Wedeto\Auth\NotFoundException When the group does not exist
      */
     public function getGroup(string $groupid)
     {
@@ -173,7 +173,7 @@ class Authentication
     }
 
     /**
-     * @return WASP\User\UserInterface The logged in user
+     * @return Wedeto\User\UserInterface The logged in user
      */
     public function currentUser()
     {
@@ -184,9 +184,9 @@ class Authentication
      * Check if the provided details contain a valid login.
      * @param string $username The user to log in
      * @param string $password The password to verify
-     * @param WASP\HTTP\Session $session The session to log into
-     * @throws WASP\Auth\AuthenticationError When logging in fails
-     * @return WASP\Auth\UserInterface The logged in user
+     * @param Wedeto\HTTP\Session $session The session to log into
+     * @throws Wedeto\Auth\AuthenticationError When logging in fails
+     * @return Wedeto\Auth\UserInterface The logged in user
      */
     public function login(string $username, string $password, Session $session)
     {

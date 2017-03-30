@@ -1,6 +1,6 @@
 <?php
 /*
-This is part of WASP, the Web Application Software Platform.
+This is part of Wedeto, the WEb DEvelopment TOolkit.
 It is published under the MIT Open Source License.
 
 Copyright 2017, Egbert van der Wal
@@ -23,7 +23,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace WASP\ACL;
+namespace Wedeto\ACL;
 
 /**
  * The Role is a user or group of users to which Rules apply.
@@ -54,7 +54,7 @@ class Role extends Hierarchy
      *
      * @param $field string The name of the property to get
      * @return The value of the property
-     * @throws WASP\ACL\Exception When the field does not exist
+     * @throws Wedeto\ACL\Exception When the field does not exist
      */
     public function __get($field)
     {
