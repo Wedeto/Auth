@@ -194,9 +194,3 @@ class PasswordGenerator
         return implode(" ", $words);
     }
 }
-
-$a = new PasswordGenerator();
-$a->loadDictionary('dutch', false, "/^[a-z]{4,16}$/");
-
-for ($i = 0; $i < 30; ++$i)
-    echo $a->generatePassphrase() . "\n";
