@@ -27,6 +27,7 @@ namespace Wedeto\Auth;
 
 use Wedeto\Util\Dictionary;
 use Wedeto\HTTP\Session;
+use Wedeto\Util\Type;
 
 /**
  * Handle authentication - log in users, verify passwords and load users
@@ -52,9 +53,9 @@ class Authentication
      */
     public function __construct($config)
     {
-        $this->config = new Dictionary($config);
+        $config = new Dictionary($config);
 
-        if ($config->has('auth', Dictionary::TYPE_ARRAY))
+        if ($config->has('auth', Type::ARRAY))
             $this->config = $config->getSection('auth');
         else
             $this->config = $config;
@@ -232,7 +233,6 @@ class Authentication
         {
             $salt = $this->config->dget('salt', '');
             $pw_hash = hash('sha256', $password . $salt);
-            echo "$pw_hash \n";
             return $pw_hash === $hash;
         }
 

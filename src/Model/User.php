@@ -30,7 +30,8 @@ use Wedeto\DB\DAO;
 
 use Wedeto\DB\SQL\QueryBuilder as Q;
 
-class User extends DAO implements UserInterface
+//class User extends DAO implements UserInterface
+abstract class User implements UserInterface
 {
     public function obtainFromLogin(string $username, string $password)
     {
@@ -38,8 +39,8 @@ class User extends DAO implements UserInterface
             Q::where(
                 Q::or(
                     Q::equals('username', $username),
-                    Q::equals('email', $username))
-                ),
+                    Q::equals('email', $username)
+                )
             )
         );
     }

@@ -27,8 +27,10 @@ namespace Wedeto\Auth;
 
 use InvalidArgumentException;
 use UnderflowException;
-use Wedeto\IOException;
+use DomainException;
+use Wedeto\IO\IOException;
 use Wedeto\Util\Functions as WF;
+use Wedeto\Util\ErrorInterceptor;
 
 /**
  * Generate random passwords or passphrases.
@@ -51,7 +53,11 @@ class PasswordGenerator
         if (WF::is_array_like($chars))
         {
             foreach ($chars as $char)
+            {
+                if (!is_string($char))
+                    throw new InvalidArgumentException("Invalid type: " . WF::str($chars));
                 $this->characters[$char] = true;
+            }
         }
         elseif (is_string($chars))
         {
@@ -60,7 +66,7 @@ class PasswordGenerator
         }
         else
         {
-            throw new InvalidArgumentException("Invalid type: " . $chars);
+            throw new InvalidArgumentException("Invalid type: " . WF::str($chars));
         }
         return $this;
     }
@@ -100,7 +106,10 @@ class PasswordGenerator
         if ($length <= 0)
             throw new DomainException("Cannot generate zero-length passwords");
 
-        $chars = array_keys($this->characters);
+        if (empty($this->characters))
+            throw new UnderflowException("First add characters used to generate the password");
+
+        $chars = implode('', array_keys($this->characters));
         $max_val = mb_strlen($chars) - 1;
         $pwd = "";
         for ($i = 0; $i < $length; ++$i)
@@ -128,36 +137,36 @@ class PasswordGenerator
     {
         if (!file_exists($filename) || !is_readable($filename))
         {
-            $fn = "/usr/share/dict/" . $filename;
-            if (!file_exists($fn))
-                throw new IOException("Cannot open file $filename and dictionary $fn does not exist");
-            $filename = $fn;
+            $orig = $filename;
+            $filename = "/usr/share/dict/" . $filename;
+            if (!file_exists($filename))
+                throw new IOException("Cannot open file $orig and dictionary $filename does not exist");
         }
 
         $cnt = mime_content_type($filename);
         if (substr($cnt, 0, 4) !== "text")
             throw new IOException("$filename does not appear to contain text");
 
-        $contents = file_get_contents($fn);
+        $contents = file_get_contents($filename);
         $lines = explode("\n", $contents);
         if (!$append)
             $this->dictionary = array();
 
         $nwords = 0;
-        try
+
+        $wrapper = new ErrorInterceptor('preg_match');
+        $wrapper->registerError(E_WARNING, 'preg_match');
+
+        foreach ($lines as $line)
         {
-            foreach ($lines as $line)
+            if (empty($regexp) || $wrapper->execute($regexp, $line))
             {
-                if (empty($regexp) || preg_match($regexp, $line))
-                {
-                    $this->dictionary[] = $line;
-                    ++$nwords;
-                }
+                $this->dictionary[] = $line;
+                ++$nwords;
             }
-        }
-        catch (ErrorException $e)
-        {
-            throw new InvalidArgumentException("Invalid regexp: $regexp");
+
+            if (count($wrapper->getInterceptedErrors()))
+                throw new InvalidArgumentException("Invalid regexp: $regexp");
         }
 
         if ($nwords === 0)
@@ -186,7 +195,7 @@ class PasswordGenerator
         while (count($words) < $num_words)
         {
             ++$attempt;
-            $s = random_int(0, count($this->dictionary));
+            $s = random_int(0, count($this->dictionary) - 1);
             $word = $this->dictionary[$s];
             if (!in_array($word, $words) || $attempt > 4 * $num_words)
                 $words[] = $word;
