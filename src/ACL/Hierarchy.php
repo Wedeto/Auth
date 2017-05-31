@@ -25,6 +25,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace Wedeto\Auth\ACL;
 
+use Wedeto\Util\Functions as WF;
+
 /**
  * Base class for Role and Entity that manages the
  * parent-child relations between Entities and Roles.
@@ -59,14 +61,14 @@ abstract class Hierarchy
      */
     public function isAncestorOf(Hierarchy $element, $loader = null)
     {
-        return $element->isOffspring($this, $loader);
+        return $element->isOffspringOf($this, $loader);
     }
 
     /**
      * Check if the current element is offspring of the specified element
      * @param $role Hierarchy The element to check
      * @param $loader callable A loader that can be used to load additional instances
-     * @return integer The number of generation leves between the $this and $element - 0 if they're not related
+     * @return integer The number of generation levels between the $this and $element - 0 if they're not related
      */
     public function isOffspringOf(Hierarchy $element, $loader = null)
     {
@@ -85,7 +87,7 @@ abstract class Hierarchy
             list($level, $cur) = array_shift($stack);
 
             // Avoid infinite cycles
-            if (isset($seen[$el->id]))
+            if (isset($seen[$cur->id]))
                 continue;
 
             // If the ancestor is the requested element, we found our answer
@@ -111,6 +113,9 @@ abstract class Hierarchy
      */
     public function getParents($loader = null)
     {
+        if (empty($this->parents) && $this->id !== static::$root)
+            $this->parents = [static::getRoot()];
+
         $parents = array();
         $ids = array_keys($this->parents);
         foreach ($ids as $id)
@@ -134,6 +139,9 @@ abstract class Hierarchy
      */
     public function setParents($parents)
     {
+        if (!WF::is_array_like($parents))
+            $parents = [$parents];
+
         $parents = (array)$parents;
         $ownclass = get_class($this);
         $is_root = ($this->id === static::$root);
@@ -150,7 +158,7 @@ abstract class Hierarchy
         }
 
         if (empty($this->parents) && !$is_root)
-            $this->parents = array(static::getRoot());
+            $this->parents = [static::getRoot()];
     }
 
     /**
@@ -186,7 +194,7 @@ abstract class Hierarchy
     public static function hasInstance($element_id)
     {
         $ownclass = get_called_class();
-        return isset(self::$database[$ownclass][$element_id]);
+        return $element_id === static::$root || isset(self::$database[$ownclass][$element_id]);
     }
 
     /**

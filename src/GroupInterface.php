@@ -37,7 +37,7 @@ interface GroupInterface
      * that is returned by GroupInterface::getGroupID.
      *
      * @param string $group_id The Group ID to load
-     * @return Wedeto\Auth\GroupInteface Provides fluent interface
+     * @return Wedeto\Auth\GroupInterface Provides fluent interface
      * @throws Wedeto\Auth\NotFoundException When the group does not exist
      */
     public function obtainByGroupID(string $group_id);

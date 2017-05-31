@@ -25,6 +25,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace Wedeto\Auth;
 
+use DomainException;
+
 use Wedeto\Util\Dictionary;
 use Wedeto\HTTP\Session;
 use Wedeto\Util\Type;
@@ -70,7 +72,7 @@ class Authentication
     public function setUserClass(string $classname)
     {
         if (!class_exists($classname) || !is_subclass_of($classname, UserInterface::class))
-            throw new DomainException("Invalid user class: $class");
+            throw new DomainException("Invalid user class: $classname");
         $this->user_class = $classname;
         return $this;
     }
@@ -83,8 +85,8 @@ class Authentication
      */
     public function setGroupClass(string $classname)
     {
-        if (!class_exists($classname) || !is_subclass_of($class, GroupInterface::class))
-            throw new DomainException("Invalid group class: $class");
+        if (!class_exists($classname) || !is_subclass_of($classname, GroupInterface::class))
+            throw new DomainException("Invalid group class: $classname");
         $this->group_class = $classname;
         return $this;
     }
@@ -201,7 +203,19 @@ class Authentication
 
         $cl = $this->getUserClass();
         $this->user = new $cl;
-        $this->user->obtainFromLogin($username, $password);
+        try
+        {
+            $this->user->obtainFromLogin($username, $password);
+        }
+        catch (AuthenticationError $e)
+        {
+            throw $e;
+        }
+        catch (\Exception $e)
+        {
+            throw new AuthenticationError("Login failed", $e->getCode(), $e); 
+        }
+
         $session->set('authentication', 'user_id', $this->user->getUserID());
         return $this->user;
     }
