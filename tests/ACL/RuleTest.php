@@ -180,6 +180,82 @@ class RuleTest extends TestCase
         $this->assertSame($rule, $rule->setRecord($data));
         $this->assertSame($data, $rule->getRecord());
     }
+
+    public function testConstructingWithRoleAndNoInheritThrowsException()
+    {
+        $this->expectException(ACLException::class);
+        $this->expectExceptionMessage("Rule::NOINHERIT can not be used in combination with a role");
+        $rule = new Rule("object", "user", "", Rule::NOINHERIT);
+    }
+
+    public function testConstructingWithActionAndNoInheritThrowsException()
+    {
+        $this->expectException(ACLException::class);
+        $this->expectExceptionMessage("Rule::NOINHERIT can not be used in combination with an action");
+        $rule = new Rule("object", "", Rule::READ, Rule::NOINHERIT);
+    }
+
+    public function testSettingRoleOnNoInheritRuleThrowsException()
+    {
+        $rule = new Rule("object", "", "", Rule::NOINHERIT);
+
+        $this->expectException(ACLException::class);
+        $this->expectExceptionMessage("Rule::NOINHERIT can not be used in combination with a role");
+        $rule->setRole("user");
+    }
+
+    public function testSettingActionOnNoInheritRuleThrowsException()
+    {
+        $rule = new Rule("object", "", "", Rule::NOINHERIT);
+
+        $this->expectException(ACLException::class);
+        $this->expectExceptionMessage("Rule::NOINHERIT can not be used in combination with an action");
+        $rule->setAction(Rule::WRITE);
+    }
+
+    public function testSettingInvalidRoleTypeThrowsException()
+    {
+        $this->expectException(ACLException::class);
+        $this->expectExceptionMessage("Role-ID must be a Role or a scalar");
+        $rule = new Rule("object", [], "", Rule::NOINHERIT);
+    }
+
+    public function testSettingInvalidEntityTypeThrowsException()
+    {
+        $this->expectException(ACLException::class);
+        $this->expectExceptionMessage("Entity-ID must be an Entity or a scalar");
+        $rule = new Rule([], "user", "", Rule::NOINHERIT);
+    }
+
+    public function testSettingValidAndInvalidPolicies()
+    {
+        $policies = [
+            Rule::ALLOW => true,
+            Rule::DENY => true,
+            Rule::INHERIT => true,
+            Rule::NOINHERIT => true,
+            1000 => false,
+            null => false
+        ];
+
+        foreach ($policies as $pol => $valid)
+        {
+            $thrown = false;
+            try
+            {
+                $rule = new Rule("object", "", "", $pol);
+            }
+            catch (ACLException $e)
+            {
+                $thrown = true;
+            }
+            catch (\TypeError $e)
+            {
+                $thrown = true;
+            }
+            $this->assertEquals(!$valid, $thrown);
+        }
+    }
 }
 
 class MockActionValidator implements ActionValidatorInterface

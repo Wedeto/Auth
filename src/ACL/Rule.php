@@ -116,7 +116,7 @@ class Rule
     public function setRole($role_id)
     {
         if (!empty($role_id) && $this->policy === Rule::NOINHERIT)
-            throw new Exception("Cannot set a role for a NOINHERIT rule");
+            throw new Exception("Rule::NOINHERIT can not be used in combination with a role");
 
         if ($role_id instanceof Role)
         {
@@ -206,10 +206,8 @@ class Rule
      */
     public function setAction(string $action)
     {
-        if (!is_scalar($action))
-            throw new Exception("Action must be a scalar");
         if (!empty($action) && $this->policy === Rule::NOINHERIT)
-            throw new Exception("Cannot set an action for a NOINHERIT rule");
+            throw new Exception("Rule::NOINHERIT can not be used in combination with an action");
 
         $action = (string)$action;
         if ($action !== $this->action)
