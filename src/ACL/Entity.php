@@ -51,20 +51,21 @@ class Entity extends Hierarchy
      */
     public function __construct($entity_id, $parent_id = array())
     {
+        $own_class = get_class($this);
         if (!is_scalar($entity_id))
-            throw new Exception("Role-ID must be a scalar");
-        if (isset(self::$database[$entity_id]))
+            throw new Exception("Entity-ID must be a scalar");
+        if (isset(self::$database[$own_class][$entity_id]))
             throw new Exception("Duplicate entity: $entity_id");
 
         $this->id = $entity_id;
         $this->setParents($parent_id);
-        self::$database[get_class($this)][$entity_id] = $this;
+        self::$database[$own_class][$entity_id] = $this;
     }
 
     /**
      * @return string the entity ID of this entity
      */
-    public function getEntityId()
+    public function getEntityID()
     {
         return $this->id;
     }
@@ -86,7 +87,8 @@ class Entity extends Hierarchy
     {
         $policy = $this->getPolicy($role, $action, $loader);
         if ($policy === Rule::UNDEFINED)
-            return Rule::getDefaultPolicy();
+            $policy = Rule::getDefaultPolicy();
+
         return $policy === Rule::ALLOW;
     }
 
@@ -105,7 +107,7 @@ class Entity extends Hierarchy
 
         $inherit = true;
         $ancestor_distance = null;
-        $ancestor_rule = null;
+        $ancestor_policy = null;
         foreach ($rules as $rule)
         {
             // NOINHERIT-rules disable rule inheritance and do nothing else
@@ -140,7 +142,7 @@ class Entity extends Hierarchy
                     ($distance === $ancestor_distance && $rule->policy === $pref_policy)
                 )
                 {
-                    $ancestor_rule = $rule;
+                    $ancestor_policy = $rule;
                     $ancestor_distance = $distance;
                 }
             }
@@ -188,16 +190,19 @@ class Entity extends Hierarchy
     /**
      * Generate a ID based on the provided DAO object
      */
-    public static function generateID(DAO $object)
+    public static function generateID(DAO $dao)
     {
-        $id = $object->getID();
+        $id = $dao->getID();
+        $fmt_string = "%08s";
         if (is_array($id))
             $id = implode("-", $id);
-        if (empty($id));
+
+        if (empty($id))
             throw new Exception("Cannot generate an ID for an empty object");
 
-        $classname = $object->getACLClass();
+        $id = substr(sha1($id), 0, 10);
+        $acl_class = $dao->getACLClass();
 
-        return $classname . "#" . sprintf("%08d", $id);
+        return $acl_class . "#" . $id;
     }
 }

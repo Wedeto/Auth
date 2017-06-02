@@ -27,9 +27,107 @@ namespace Wedeto\Auth\ACL;
 
 use PHPUnit\Framework\TestCase;
 
+use Wedeto\Auth\ACL\Exception as ACLException;
+use Wedeto\DB\DAO;
+
 /**
  * @covers Wedeto\Auth\ACL\Entity
  */
 class EntityTest extends TestCase
 {
+    public function setUp()
+    {
+        Entity::clearCache();
+    }
+
+    public function testConstructionWithIDWorks()
+    {
+        $entity = new Entity('foo');
+        $this->assertEquals('foo', $entity->getEntityID());
+
+        $entity = new Entity('bar');
+        $this->assertEquals('bar', $entity->getEntityID());
+    }
+
+    public function testConstructWithNonScalar()
+    {
+        $this->expectException(ACLException::class);
+        $this->expectExceptionMessage("Entity-ID must be a scalar");
+        $entity = new Entity(['foo']);
+    }
+
+    public function testDuplicateConstructionThrowsException()
+    {
+        $foo1 = new Entity('foo');
+
+        $this->expectException(ACLException::class);
+        $this->expectExceptionMessage("Duplicate entity: foo");
+        $foo2 = new Entity('foo');
+    }
+
+    public function testGenerateID()
+    {
+        $mock = new MockDAO(123);
+        $id = Entity::generateID($mock);
+        $sum = substr(sha1('123'), 0, 10);
+        $this->assertEquals('Wedeto_MockDAO#' . $sum, $id, 'Unexpected ID for integer ID');
+
+        $mock = new MockDAO('foobar');
+        $id = Entity::generateID($mock);
+        $sum = substr(sha1('foobar'), 0, 10);
+        $this->assertEquals('Wedeto_MockDAO#' . $sum, $id, 'Unexpected ID for string ID');
+
+        $mock = new MockDAO(['123', '456']);
+        $id = Entity::generateID($mock);
+        $sum = substr(sha1('123-456'), 0, 10);
+        $this->assertEquals('Wedeto_MockDAO#' . $sum, $id, 'Unexpected ID for multi-valued ID');
+
+        $mock = new MockDAO(null);
+        $this->expectException(ACLException::class);
+        $this->expectExceptionMessage("Cannot generate an ID for an empty object");
+        $id = Entity::generateID($mock);
+        $this->assertEquals('Wedeto_MockDAO#' . $sum, $id, 'Unexpected ID for multi-valued ID');
+    }
+
+    public function testIsAllowed()
+    {
+        $loader = new MockEntityTestRuleLoader();
+        RuleLoader::setLoader($loader);
+
+        $role = new Role('user');
+        $entity = new Entity('foo');
+
+        $this->assertFalse($entity->isAllowed($role, Rule::READ));
+        $this->assertFalse($entity->isAllowed($role, Rule::WRITE));
+    }
+}
+
+class MockDAO extends DAO
+{
+    protected $id;
+
+    public function __construct($id)
+    {
+        $this->id = $id;
+    }
+
+    public function getID()
+    {
+        return $this->id;
+    }
+}
+
+class MockEntityTestRuleLoader implements RuleLoaderInterface
+{
+    protected $mock_rules = [];
+
+    public function setMockRules(array $rules)
+    {
+        $this->mock_rules = $rules;
+    }
+
+    public function loadRules(string $entity_id)
+    {
+        return $this->mock_rules[$entity_id] ?? [];
+    }
 }

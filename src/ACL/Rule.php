@@ -50,6 +50,12 @@ class Rule
     /** UNDEFINED: Used only as a policy result: none of the applicable rules give a definitive answer */
     const UNDEFINED = 4;
 
+    /** READ: Read permission on an entity */
+    const READ = "READ";
+
+    /** WRITE: Write permission on an entity */
+    const WRITE = "WRITE";
+
     /** The default policy when no policy applies */
     protected static $default_policy = Rule::DENY;
 

@@ -35,7 +35,7 @@ class DBRuleLoader implements RuleLoaderInterface
     /**
      * Loads the rules for the specified entity from the database.
      */
-    public function loadRules($entity_id)
+    public function loadRules(string $entity_id)
     {
         $records = ACLRule::get(array("entity_id" => $entity_id));
         $rules = array();

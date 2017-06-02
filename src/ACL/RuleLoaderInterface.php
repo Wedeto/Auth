@@ -27,5 +27,5 @@ namespace Wedeto\Auth\ACL;
 
 interface RuleLoaderInterface
 {
-    public function loadRules($entity_id);
+    public function loadRules(string $entity_id);
 }

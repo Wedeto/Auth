@@ -34,11 +34,11 @@ class RuleLoader
         if (self::$instance === null)
             throw new \RuntimeException("You need to set the loader before loading rules");
 
-        $this->instance->loadRules($entity_id);
+        return self::$instance->loadRules($entity_id);
     }
 
     public static function setLoader(RuleLoaderInterface $loader)
     {
-        $this->instance = $loader;
+        self::$instance = $loader;
     }
 }
