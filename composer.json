@@ -7,7 +7,7 @@
     "require": {
         "Wedeto/Util": "0.9.*",
         "Wedeto/HTTP": "0.9.*",
-        "Wedeto/DB": "@dev",
+        "Wedeto/DB": "0.9.*",
         "php": ">=7.0.0"
     },
     "autoload": {
@@ -19,12 +19,6 @@
         {
             "name": "Egbert van der Wal",
             "email": "wedeto@pointpro.nl"
-        }
-    ],
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/Wedeto/DB"
         }
     ]
 }
