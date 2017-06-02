@@ -38,15 +38,16 @@ class EntityTest extends TestCase
     public function setUp()
     {
         Entity::clearCache();
+        Role::clearCache();
     }
 
     public function testConstructionWithIDWorks()
     {
         $entity = new Entity('foo');
-        $this->assertEquals('foo', $entity->getEntityID());
+        $this->assertEquals('foo', $entity->getID());
 
         $entity = new Entity('bar');
-        $this->assertEquals('bar', $entity->getEntityID());
+        $this->assertEquals('bar', $entity->getID());
     }
 
     public function testConstructWithNonScalar()
@@ -98,6 +99,118 @@ class EntityTest extends TestCase
 
         $this->assertFalse($entity->isAllowed($role, Rule::READ));
         $this->assertFalse($entity->isAllowed($role, Rule::WRITE));
+    }
+
+    public function testGetPolicy()
+    {
+        $user1 = new Role("user1");
+        $user2 = new Role("user2");
+        $user3 = new Role("user3");
+
+        $file = new Entity("file");
+        $folder = new Entity("folder");
+
+        $group = new Role("group1");
+
+        $user1->setParents($group);
+        $user2->setParents($group);
+        $file->setParents($folder);
+
+        $rules = [
+            "folder" => [
+                new Rule($folder, Role::getRoot(), Rule::READ, Rule::ALLOW),
+            ],
+            "file" => [
+                new Rule($file, $group, Rule::WRITE, Rule::ALLOW),
+                new Rule($file, $user1, Rule::WRITE, Rule::DENY)
+            ]
+        ];
+
+        $loader = new MockEntityTestRuleLoader();
+        $loader->setMockRules($rules);
+        RuleLoader::setLoader($loader);
+
+        $this->assertEquals(Rule::ALLOW, $file->getPolicy($user1, Rule::READ));
+        $this->assertEquals(Rule::DENY, $file->getPolicy($user1, Rule::WRITE));
+        $this->assertEquals(Rule::ALLOW, $file->getPolicy($user2, Rule::WRITE));
+        $this->assertEquals(Rule::UNDEFINED, $file->getPolicy($user3, Rule::WRITE));
+        $this->assertEquals(Rule::ALLOW, $file->getPolicy($user3, Rule::READ));
+
+        $this->assertTrue($file->isAllowed($user1, Rule::READ));
+        $this->assertFalse($file->isAllowed($user1, Rule::WRITE));
+        $this->assertTrue($file->isAllowed($user2, Rule::WRITE));
+        $this->assertTrue($file->isAllowed($user3, Rule::READ));
+
+        // This one has no rule, so it depends on the default policy
+        Rule::setDefaultPolicy(Rule::ALLOW);
+        $this->assertTrue($file->isAllowed($user3, Rule::WRITE));
+
+        Rule::setDefaultPolicy(Rule::DENY);
+        $this->assertFalse($file->isAllowed($user3, Rule::WRITE));
+        
+        // Check preferred policy setting
+        $group2 = new Role("group2");
+        $user2->setParents([$group, $group2]);
+        
+        // User 2 is child of group 1 and group 2. Group 1 allows write access
+        // to file, so add a rule that denies group 2 from write access
+        $rules['file'][] = new Rule($file, $group2, Rule::WRITE, Rule::DENY);
+        $loader->setMockRules($rules);
+
+        $file->resetRules();
+        $folder->resetRules();
+
+        // Now the outcome is determined by the preferred policy
+        // First, prefer ALLOW
+        Rule::setPreferredPolicy(Rule::ALLOW);
+        $this->assertTrue($file->isAllowed($user2, Rule::WRITE));
+
+        // Now, prefer DENY
+        Rule::setPreferredPolicy(Rule::DENY);
+        $this->assertFalse($file->isAllowed($user2, Rule::WRITE));
+    }
+
+    public function testInheritance()
+    {
+        $user1 = new Role("user1");
+        $user2 = new Role("user2");
+        $user3 = new Role("user3");
+
+        $file = new Entity("file");
+        $folder = new Entity("folder");
+
+        $group = new Role("group1");
+
+        $user1->setParents($group);
+        $user2->setParents($group);
+        $user3->setParents($group);
+        $file->setParents($folder);
+
+        $rule1 = new Rule($file, "", "", Rule::NOINHERIT);
+        $rules = [
+            "folder" => [
+                new Rule($folder, Role::getRoot(), Rule::READ, Rule::ALLOW),
+                new Rule($file, $group, Rule::WRITE, Rule::ALLOW),
+            ],
+            "file" => [
+                $rule1,
+                new Rule($file, $user1, Rule::WRITE, Rule::DENY),
+                new Rule($file, $user2, Rule::WRITE, Rule::ALLOW)
+            ]
+        ];
+
+        $loader = new MockEntityTestRuleLoader();
+        $loader->setMockRules($rules);
+        RuleLoader::setLoader($loader);
+
+        $this->assertEquals(Rule::DENY, $file->getPolicy($user1, Rule::WRITE));
+        $this->assertEquals(Rule::ALLOW, $file->getPolicy($user2, Rule::WRITE));
+        $this->assertEquals(Rule::UNDEFINED, $file->getPolicy($user3, Rule::WRITE));
+        
+        $rule1->setPolicy(Rule::INHERIT);
+        $this->assertEquals(Rule::DENY, $file->getPolicy($user1, Rule::WRITE));
+        $this->assertEquals(Rule::ALLOW, $file->getPolicy($user2, Rule::WRITE));
+        $this->assertEquals(Rule::ALLOW, $file->getPolicy($user3, Rule::WRITE));
     }
 }
 

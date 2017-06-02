@@ -43,25 +43,10 @@ class Role extends Hierarchy
             throw new Exception("Role-ID must be scalar");
 
         if (isset(self::$database[static::class][$role_id]))
-            throw new Exception("Duplicate role $role_id");
+            throw new Exception("Duplicate role: $role_id");
 
         $this->id = $role_id;
         $this->setParents($parents);
         self::$database[static::class][$role_id] = $this;
-    }
-
-    /**
-     * Provide access to properties
-     *
-     * @param $field string The name of the property to get
-     * @return The value of the property
-     * @throws Wedeto\ACL\Exception When the field does not exist
-     */
-    public function __get($field)
-    {
-        if (!property_exists($this, $field))
-            throw new Exception("Invalid field for Role: $field");
-
-        return $this->field;
     }
 }

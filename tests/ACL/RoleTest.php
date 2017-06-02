@@ -27,9 +27,42 @@ namespace Wedeto\Auth\ACL;
 
 use PHPUnit\Framework\TestCase;
 
+use Wedeto\Auth\ACL\Exception as ACLException;
+
 /**
  * @covers Wedeto\Auth\ACL\Role
  */
 class RoleTest extends TestCase
 {
+    public function setUp()
+    {
+        Role::clearCache();
+    }
+
+    public function testBasicConstruction()
+    {
+        $user = new Role('user');
+        $group = new Role('group');
+
+        $user->setParents(['group']);
+
+        $parents = $user->getParents();
+        $this->assertSame([$group], $parents);
+    }
+
+    public function testNonScalarIDThrowsException()
+    {
+        $this->expectException(ACLException::class);
+        $this->expectExceptionMessage("Role-ID must be scalar");
+        $user = new Role([]);
+    }
+
+    public function testDuplicateIDThrowsException()
+    {
+        $user = new Role('user');
+
+        $this->expectException(ACLException::class);
+        $this->expectExceptionMessage('Duplicate role: user');
+        $user2 = new Role('user');
+    }
 }

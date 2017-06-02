@@ -63,14 +63,6 @@ class Entity extends Hierarchy
     }
 
     /**
-     * @return string the entity ID of this entity
-     */
-    public function getEntityID()
-    {
-        return $this->id;
-    }
-
-    /**
      * Get a definitive answer to the question:
      *
      * Is X allowed by Y on Z?
@@ -185,6 +177,16 @@ class Entity extends Hierarchy
             $this->rules = RuleLoader::load($this->id);
 
         return $this->rules;
+    }
+
+    /**
+     * Unload the rules. Mainly useful for testing
+     * @return Entity Provides fluent interface
+     */
+    public function resetRules()
+    {
+        $this->rules = null;
+        return $this;
     }
 
     /**

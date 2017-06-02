@@ -45,6 +45,9 @@ class HierarchyTest extends TestCase
         $two = new MockHierarchy('two');
         $one_dup = new MockHierarchy('one');
 
+        $this->assertEquals('one', $one->getID());
+        $this->assertEquals('two', $two->getID());
+
         $this->assertTrue($one->is($one_dup));
         $this->assertTrue($one_dup->is($one));
         $this->assertFalse($one->is($two));
@@ -203,6 +206,25 @@ class HierarchyTest extends TestCase
         $this->assertEquals(0, $c->isAncestorOf($c));
     }
 
+    public function testGetParentsWithLoader()
+    {
+        $i1 = new MockHierarchy('foo');
+        $i1->setParents(['bar']);
+
+        $counter = new \stdClass;
+        $counter->cnt = 0;
+
+        $loader = function ($id) use ($counter) {
+            ++$counter->cnt;
+            return new MockHierarchy($id);
+        };
+
+        $parents = $i1->getParents($loader);
+
+        $this->assertEquals(1, $counter->cnt);
+        $this->assertEquals(1, count($parents));
+        $this->assertEquals('bar', $parents[0]->getID());
+    }
 }
 
 class MockHierarchy extends Hierarchy

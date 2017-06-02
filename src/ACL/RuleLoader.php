@@ -29,15 +29,25 @@ class RuleLoader
 {
     protected static $instance;
 
+    /**
+     * Load the rules for an entity
+     * @paran string $entity_id The entity id for which to load rules
+     * @return array The list of rules
+     * @throws ACLException When no rule loader was set
+     */
     public static function load($entity_id)
     {
         if (self::$instance === null)
-            throw new \RuntimeException("You need to set the loader before loading rules");
+            throw new Exception("You need to set the loader before loading rules");
 
         return self::$instance->loadRules($entity_id);
     }
 
-    public static function setLoader(RuleLoaderInterface $loader)
+    /**
+     * Set the rule loader interface. Can be null to unset it
+     * @param RuleLoaderInterface $loader The rule loader. Null to unset the loader
+     */
+    public static function setLoader(RuleLoaderInterface $loader = null)
     {
         self::$instance = $loader;
     }
