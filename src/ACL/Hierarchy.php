@@ -42,6 +42,14 @@ abstract class Hierarchy
     /** Subclasses should define the name of the root element here */
     protected static $root;
 
+    /**
+     * @return scalar The ID of the Hierarchy element
+     */
+    public function getID()
+    {
+        return $this->id;
+    }
+
     /** 
      * Check if the objects are referring to the same element.
      * @return boolean True if both elements are the same class and ID, false otherwise
@@ -185,7 +193,7 @@ abstract class Hierarchy
             if ($element_id === static::$root)
                 self::$database[$ownclass][static::$root] = new $ownclass(static::$root);
             else
-                throw new Exception("Element-ID {$element_id} is unknown for {$ownclass}");
+                throw new Exception("Element-ID '{$element_id}' is unknown for {$ownclass}");
         }
 
         return self::$database[$ownclass][$element_id];

@@ -86,7 +86,6 @@ class EntityTest extends TestCase
         $this->expectException(ACLException::class);
         $this->expectExceptionMessage("Cannot generate an ID for an empty object");
         $id = Entity::generateID($mock);
-        $this->assertEquals('Wedeto_MockDAO#' . $sum, $id, 'Unexpected ID for multi-valued ID');
     }
 
     public function testIsAllowed()

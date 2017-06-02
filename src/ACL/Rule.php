@@ -100,10 +100,10 @@ class Rule
      */
     public function __construct($entity_id, $role_id, string $action, int $policy)
     {
-        $this->setEntity($entity);
-        $this->setRole($role);
-        $this->setPolicy($policy);
+        $this->setEntity($entity_id);
+        $this->setRole($role_id);
         $this->setAction($action);
+        $this->setPolicy($policy);
         $this->changed = false;
     }
 
@@ -121,7 +121,7 @@ class Rule
         if ($role_id instanceof Role)
         {
             $this->role = $role_id;
-            $role_id = $role_id->getRoleID();
+            $role_id = $role_id->getID();
         }
         elseif (!is_scalar($role_id))
             throw new Exception("Role-ID must be a Role or a scalar");
@@ -144,7 +144,7 @@ class Rule
         if ($entity_id instanceof Entity)
         {
             $this->entity = $entity_id;
-            $entity_id = $entity_id->getEntityID();
+            $entity_id = $entity_id->getID();
         }
         elseif (!is_scalar($entity_id))
             throw new Exception("Entity-ID must be an Entity or a scalar");
@@ -162,7 +162,7 @@ class Rule
     public function getEntity()
     {
         if ($this->entity === null)
-            $this->entity = new Entity($this->entity_id);
+            $this->entity = Entity::getInstance($this->entity_id);
         return $this->entity;
     }
 
@@ -172,7 +172,7 @@ class Rule
     public function getRole()
     {
         if ($this->role === null)
-            $this->role = new Role($this->role_id);
+            $this->role = Role::getInstance($this->role_id);
         return $this->role;
     }
 
@@ -254,16 +254,18 @@ class Rule
     /**
      * Set the record associated to this rule
      * @param $record mixed Data to be associated with this rule
+     * @return Rule Provides fluent interface
      */
     public function setRecord($record)
     {
         $this->record = $record;
+        return $this;
     }
 
     /**
      * Set the action validator used to validate actions on rules.
      */
-    public static function setActionValidator(ActionValidatorInterface $validator)
+    public static function setActionValidator(ActionValidatorInterface $validator = null)
     {
         self::$action_validator = $validator;
     }
@@ -287,7 +289,7 @@ class Rule
         }
 
         if (!($policy === Rule::ALLOW || $policy === Rule::DENY))
-            throw new Exception("Default policy should be either Rule::ALOW or Rule::DENY"); 
+            throw new Exception("Default policy should be either Rule::ALLOW or Rule::DENY"); 
 
         self::$default_policy = $policy;
     }
@@ -319,7 +321,7 @@ class Rule
         }
 
         if (!($policy === Rule::ALLOW || $policy === Rule::DENY))
-            throw new Exception("Default policy should be either Rule::ALOW or Rule::DENY"); 
+            throw new Exception("Preferred policy should be either Rule::ALLOW or Rule::DENY"); 
 
         self::$preferred_policy = $policy;
     }

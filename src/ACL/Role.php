@@ -41,12 +41,13 @@ class Role extends Hierarchy
     {
         if (!is_scalar($role_id))
             throw new Exception("Role-ID must be scalar");
-        if (isset(self::$database[$role_id]))
+
+        if (isset(self::$database[static::class][$role_id]))
             throw new Exception("Duplicate role $role_id");
 
         $this->id = $role_id;
         $this->setParents($parents);
-        self::$database[get_class($this)][$role_id] = $this;
+        self::$database[static::class][$role_id] = $this;
     }
 
     /**

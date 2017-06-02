@@ -29,8 +29,9 @@ interface ActionValidatorInterface
 {
     /**
      * This method should check whether the specified action is valid or not.
+     * @param string $action The action to validate
      * @return true|string True when it is a valid action, or a string explaining the error when it is not valid.
      */
-    public function isValid($action);
+    public function isValid(string $action);
 }
 

@@ -88,7 +88,7 @@ class HierarchyTest extends TestCase
         }
         catch (ACLException $e)
         {
-            $this->assertContains('Element-ID three is unknown for', $e->getMessage());
+            $this->assertContains('Element-ID \'three\' is unknown for', $e->getMessage());
             $thrown = true;
         }
         $this->assertTrue($thrown);

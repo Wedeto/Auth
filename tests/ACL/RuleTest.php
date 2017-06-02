@@ -27,9 +27,174 @@ namespace Wedeto\Auth\ACL;
 
 use PHPUnit\Framework\TestCase;
 
+use Wedeto\Auth\ACL\Exception as ACLException;
+
 /**
  * @covers Wedeto\Auth\ACL\Rule
  */
 class RuleTest extends TestCase
 {
+    public function setUp()
+    {
+        Entity::clearCache();
+        Role::clearCache();
+        Rule::setActionValidator();
+    }
+
+    public function testRuleSetup()
+    {
+        $obj = new Entity("object");
+        $obj2 = new Entity("object2");
+        $user = new Role("user");
+        $user2 = new Role("user2");
+
+        $r1 = new Rule("object", "user", Rule::READ, Rule::ALLOW);
+        $r2 = new Rule("object", Role::getRoot(), Rule::WRITE, Rule::DENY);
+        $r3 = new Rule("object", $user2, Rule::READ, Rule::ALLOW);
+        $r4 = new Rule($obj2, "user2", Rule::READ, Rule::ALLOW);
+
+        $this->assertInstanceOf(Rule::class, $r1);
+        $this->assertInstanceOf(Rule::class, $r2);
+
+        $this->assertInstanceOf(Entity::class, $r1->getEntity());
+        $this->assertEquals('object', $r1->getEntity()->getID());
+        $this->assertInstanceOf(Role::class, $r1->getRole());
+        $this->assertEquals('user', $r1->getRole()->getID());
+        $this->assertSame($r1->getEntity(), $r1->entity);
+        $this->assertSame($r1->getRole(), $r1->role);
+        $this->assertEquals(Rule::READ, $r1->action);
+        $this->assertEquals(Rule::ALLOW, $r1->policy);
+
+        $this->assertInstanceOf(Entity::class, $r2->getEntity());
+        $this->assertEquals('object', $r2->getEntity()->getID());
+        $this->assertInstanceOf(Role::class, $r2->getRole());
+        $this->assertEquals('EVERYONE', $r2->getRole()->getID());
+        $this->assertSame($r2->getEntity(), $r2->entity);
+        $this->assertSame($r2->getRole(), Role::getRoot());
+        $this->assertEquals(Rule::WRITE, $r2->action);
+        $this->assertEquals(Rule::DENY, $r2->policy);
+
+        $this->assertInstanceOf(Entity::class, $r3->getEntity());
+        $this->assertEquals('object', $r3->getEntity()->getID());
+        $this->assertInstanceOf(Role::class, $r3->getRole());
+        $this->assertSame($user2, $r3->getRole());
+        $this->assertSame($r3->getEntity(), $r3->entity);
+        $this->assertSame($r3->getRole(), $r3->role);
+        $this->assertEquals(Rule::WRITE, $r2->action);
+        $this->assertEquals(Rule::DENY, $r2->policy);
+
+        $this->assertInstanceOf(Entity::class, $r4->getEntity());
+        $this->assertSame("object2", $r4->getEntity()->getID());
+        $this->assertInstanceOf(Role::class, $r4->getRole());
+        $this->assertSame($user2, $r4->getRole());
+        $this->assertSame($r4->getEntity(), $r4->entity);
+        $this->assertSame($r4->getRole(), $r4->role);
+        $this->assertEquals(Rule::READ, $r4->action);
+        $this->assertEquals(Rule::ALLOW, $r4->policy);
+    }
+
+    public function testUseActionValidator()
+    {
+        $val = new MockActionValidator;
+        $val->setResult(true);
+
+        Rule::setActionValidator($val);
+        
+        $rule = new Rule("object", "user", Rule::READ, Rule::ALLOW);
+        $this->assertEquals(1, $val->call_count);
+
+        $val->setResult(false);
+        $this->expectException(ACLException::class);
+        $this->expectExceptionMessage("Action can not be validated: rejected");
+        $rule->setAction('foobar');
+    }
+
+    public function testInvalidField()
+    {
+        $obj = new Entity("object");
+        $user = new Role("user");
+
+        $rule = new Rule($obj, $user, Rule::READ, Rule::ALLOW); 
+        $this->expectException(ACLException::class);
+        $this->expectExceptionMessage("Invalid field for Rule: foo");
+        $rule->foo;
+    }
+
+    public function testDefaultAndPreferredPolicy()
+    {
+        Rule::setDefaultPolicy(Rule::ALLOW);
+        Rule::setPreferredPolicy(Rule::ALLOW);
+        $this->assertEquals(Rule::ALLOW, Rule::getDefaultPolicy());
+        Rule::setDefaultPolicy(Rule::DENY);
+        Rule::setPreferredPolicy(Rule::ALLOW);
+        $this->assertEquals(Rule::DENY, Rule::getDefaultPolicy());
+
+        Rule::setPreferredPolicy(Rule::ALLOW);
+        Rule::setDefaultPolicy(Rule::ALLOW);
+        $this->assertEquals(Rule::ALLOW, Rule::getPreferredPolicy());
+        Rule::setPreferredPolicy(Rule::DENY);
+        Rule::setDefaultPolicy(Rule::ALLOW);
+        $this->assertEquals(Rule::DENY, Rule::getPreferredPolicy());
+
+        Rule::setDefaultPolicy("DENY");
+        $this->assertEquals(Rule::DENY, Rule::getDefaultPolicy());
+
+        Rule::setDefaultPolicy("ALLOW");
+        $this->assertEquals(Rule::ALLOW, Rule::getDefaultPolicy());
+
+        Rule::setPreferredPolicy("DENY");
+        $this->assertEquals(Rule::DENY, Rule::getPreferredPolicy());
+
+        Rule::setPreferredPolicy("ALLOW");
+        $this->assertEquals(Rule::ALLOW, Rule::getPreferredPolicy());
+
+        $thrown = false;
+        try
+        {
+            Rule::setDefaultPolicy("FOO");
+        }
+        catch (ACLException $e)
+        {
+            $this->assertContains("Default policy should be either Rule::ALLOW or Rule::DENY", $e->getMessage());
+            $thrown = true;
+        }
+        $this->assertTrue($thrown);
+
+        $thrown = false;
+        try
+        {
+            Rule::setPreferredPolicy("FOO");
+        }
+        catch (ACLException $e)
+        {
+            $this->assertContains("Preferred policy should be either Rule::ALLOW or Rule::DENY", $e->getMessage());
+            $thrown = true;
+        }
+        $this->assertTrue($thrown);
+    }
+
+    public function testGetSetRecord()
+    {
+        $rule = new Rule("object", "user", Rule::READ, Rule::ALLOW);
+        $data = new \stdClass;
+        $this->assertSame($rule, $rule->setRecord($data));
+        $this->assertSame($data, $rule->getRecord());
+    }
+}
+
+class MockActionValidator implements ActionValidatorInterface
+{
+    protected $result = true;
+    public $call_count = 0;
+
+    public function setResult(bool $result)
+    {
+        $this->result = $result;
+    }
+
+    public function isValid(string $action)
+    {
+        ++$this->call_count;
+        return $this->result ? true : "rejected";
+    }
 }
