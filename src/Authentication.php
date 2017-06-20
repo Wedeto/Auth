@@ -246,7 +246,9 @@ class Authentication
         if (substr($hash, 0, 1) !== "$")
         {
             $salt = $this->config->dget('salt', '');
-            $pw_hash = hash('sha256', $password . $salt);
+            $append = $this->config->dget('salt_placement', 'append') === 'append';
+            $to_hash = $append ? $password . $salt : $salt . $password;
+            $pw_hash = hash('sha256', $to_hash);
             return $pw_hash === $hash;
         }
 
