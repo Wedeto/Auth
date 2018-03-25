@@ -56,12 +56,6 @@ class Rule
     /** WRITE: Write permission on an entity */
     const WRITE = "WRITE";
 
-    /** The default policy when no policy applies */
-    protected static $default_policy = Rule::DENY;
-
-    /** Which policy has preference when you conflicting Rule's exist */
-    protected static $preferred_policy = Rule::ALLOW;
-
     /** The ID of the entity this rule applies to */
     protected $entity_id;
 
@@ -85,9 +79,6 @@ class Rule
 
     /** Reference to external storage, such as database records */
     protected $record;
-
-    /** Used to validate actions */
-    protected static $action_validator = null;
 
     /**
      * Create the object providing entity, role, action and policy.
@@ -260,75 +251,4 @@ class Rule
         return $this;
     }
 
-    /**
-     * Set the action validator used to validate actions on rules.
-     */
-    public static function setActionValidator(ActionValidatorInterface $validator = null)
-    {
-        self::$action_validator = $validator;
-    }
-
-    /**
-     * Set the default policy which is applied when no rule
-     * specifies a definitive answer.
-     * @param $policy scalar Either one of (Rule::ALLOW, Rule::DENY) or one
-     *                       of the strings "ALLOW" or "DENY"
-     * @throws Exception When an invalid policy is returned
-     */
-    public static function setDefaultPolicy($policy)
-    {
-        if (is_string($policy))
-        {
-            $policy = trim(strtoupper($policy));
-            if ($policy === "ALLOW")
-                $policy = Rule::ALLOW;
-            elseif ($policy === "DENY")
-                $policy = Rule::DENY;
-        }
-
-        if (!($policy === Rule::ALLOW || $policy === Rule::DENY))
-            throw new Exception("Default policy should be either Rule::ALLOW or Rule::DENY"); 
-
-        self::$default_policy = $policy;
-    }
-
-    /**
-     * @return integer The default policy, the policy to apply when no explicity policy is defined
-     */
-    public static function getDefaultPolicy()
-    {
-        return self::$default_policy;
-    }
-
-    /**
-     * Set the default policy which is applied when no rule
-     * specifies a definitive answer.
-     * @param $policy scalar Either one of (Rule::ALLOW, Rule::DENY) or one
-     *                       of the strings "ALLOW" or "DENY"
-     * @throws Exception When an invalid policy is returned
-     */
-    public static function setPreferredPolicy($policy)
-    {
-        if (is_string($policy))
-        {
-            $policy = trim(strtoupper($policy));
-            if ($policy === "ALLOW")
-                $policy = Rule::ALLOW;
-            elseif ($policy === "DENY")
-                $policy = Rule::DENY;
-        }
-
-        if (!($policy === Rule::ALLOW || $policy === Rule::DENY))
-            throw new Exception("Preferred policy should be either Rule::ALLOW or Rule::DENY"); 
-
-        self::$preferred_policy = $policy;
-    }
-
-    /**
-     * @return integer The preferred policy, the policy to select when several policies are defined.
-     */
-    public static function getPreferredPolicy()
-    {
-        return self::$preferred_policy;
-    }
 }

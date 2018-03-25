@@ -29,7 +29,7 @@ use DomainException;
 
 use Wedeto\Util\Dictionary;
 use Wedeto\HTTP\Session;
-use Wedeto\Util\Type;
+use Wedeto\Util\Validation\Type;
 
 /**
  * Handle authentication - log in users, verify passwords and load users

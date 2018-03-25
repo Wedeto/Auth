@@ -28,7 +28,7 @@ namespace Wedeto\Auth;
 use PHPUnit\Framework\TestCase;
 
 use Wedeto\Util\Dictionary;
-use Wedeto\Util\Type;
+use Wedeto\Util\Validation\Type;
 use Wedeto\IO\IOException;
 use Wedeto\HTTP\Session;
 use Wedeto\HTTP\URL;

@@ -30,7 +30,6 @@ use Wedeto\DB\DAO;
 
 use Wedeto\DB\SQL\QueryBuilder as Q;
 
-//class User extends DAO implements UserInterface
 abstract class User implements UserInterface
 {
     public function obtainFromLogin(string $username, string $password)
