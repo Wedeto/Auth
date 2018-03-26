@@ -3,7 +3,7 @@
 This is part of Wedeto, the WEb DEvelopment TOolkit.
 It is published under the MIT Open Source License.
 
-Copyright 2017, Egbert van der Wal
+Copyright 2018, Egbert van der Wal
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -23,32 +23,11 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace Wedeto\Auth\ACL;
-
-class RuleLoader
+interface Loader
 {
-    protected static $instance;
-
     /**
-     * Load the rules for an entity
-     * @paran string $entity_id The entity id for which to load rules
-     * @return array The list of rules
-     * @throws ACLException When no rule loader was set
+     * @param scalar $id The ID of the entity to load
+     * @param string $classname The FQ classname of the entity
      */
-    public static function load($entity_id)
-    {
-        if (self::$instance === null)
-            throw new Exception("You need to set the loader before loading rules");
-
-        return self::$instance->loadRules($entity_id);
-    }
-
-    /**
-     * Set the rule loader interface. Can be null to unset it
-     * @param RuleLoaderInterface $loader The rule loader. Null to unset the loader
-     */
-    public static function setLoader(RuleLoaderInterface $loader = null)
-    {
-        self::$instance = $loader;
-    }
+    public function load($id, string $class);
 }

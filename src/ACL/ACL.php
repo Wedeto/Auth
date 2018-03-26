@@ -47,17 +47,49 @@ class ACL
     /** Validator used to validate actions */
     protected $action_validator = null;
 
+    /** The retrieved roles and entities */
+    protected $hierarchy = [];
+
+    /** The instance of a rule loader */
+    protected $rule_loader;
+
+    public function __construct(RuleLoaderInterface $loader)
+    {
+        $this->setRuleLoader($loader);
+    }
+
     /**
-     * Return the name of the object class to be used in ACL entity naming.
+     * Set the instance of a rule loader to load rules
+     * @param RuleLoaderInterface $loader The loader to use
+     * @return $this Provides fluent interface
      */
-    public function registerClass($name)
+    public function setRuleLoader(RuleLoaderInterface $loader)
+    {
+        $this->rule_loader = $rule_loader;
+        return $this;
+    }
+
+    /**
+     * @return RuleLoaderInterface the rule loader used to load rules.
+     */
+    public function getRuleLoader()
+    {
+        return $this->rule_loader;
+    }
+
+    /**
+     * Register the name of the object class to be used in ACL entity naming.
+     *
+     * @param string $class The name of the class
+     * @param string $name The name of the ACL objects
+     */
+    public function registerClass(string $class, string $name)
     {
         if (isset($this->classes[$name]))
             throw new \RuntimeException("Cannot register the same name twice");
     
-        // TODO: $cl was Model class
-        $this->classes[$name] = $cl;
-        $this->classes_names[$cl] = $name;
+        $this->classes[$name] = $class;
+        $this->classes_names[$class] = $name;
     }
 
     /**
@@ -139,7 +171,6 @@ class ACL
      */
     public function loadByACLID($id)
     {
-        // TODO: this should probably move to the ACL?!
         $parts = explode("#", $id);
         if (count($parts) !== 2)
             throw new \RuntimeException("Invalid DAO ID: {$id}");
@@ -152,5 +183,62 @@ class ACL
     
         return call_user_func(array($classname, "get"), $pkey_values);
     }
-    
+
+    /**
+     * Get an hierarchy element by specifying its ID
+     */
+    public function getInstance(string $class, $element_id)
+    {
+        if (!is_a($class, Hierarchy::class, true))
+            throw new Exception("Not a subclass of Hierarchy: $class");
+
+        if (is_object($element_id) && get_class($element_id) === $class)
+            return $element_id;
+
+        if (!is_scalar($element_id))
+            throw new Exception("Element-ID must be a scalar");
+
+        if (!$this->hasInstance($class, $element_id))
+        {
+            $root = $class::$root;
+            if ($element_id === $root)
+                $this->hierarchy[$class][$root] = new $class($root);
+            else
+                throw new Exception("Element-ID '{$element_id}' is unknown for {$ownclass}");
+        }
+
+        return $this->hierarchy[$class][$element_id];
+    }
+
+    /**
+     * @return Hierarchy Instance of element
+     */
+    public function hasInstance(string $class, $element_id)
+    {
+        return isset($this->hierarchy[$class][$element_id]);
+    }
+
+    /**
+     * Set the instance of a specific ID.
+     *
+     * @param scalar $id The ID to set the instance for
+     * @return $this Provides fluent interface
+     */
+    public function setInstance(Hierarchy $element)
+    {
+        $class = get_class($element);
+        $this->hierarchy[$class][$element->id] = $element;
+        return $this;
+    }
+
+    /**
+     * Load the rules for a specific entity
+     *
+     * @param string $entity_id The ID to get rules for
+     * @return array The loaded rules
+     */
+    public function loadRules(string $entity_id)
+    {
+        return $this->rule_loader->loadRules($entity_id);
+    }
 }

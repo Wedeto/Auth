@@ -36,17 +36,22 @@ class Role extends Hierarchy
 
     /**
      * Create the Role object providing its ID and a list of parents
+     *
+     * @param Wedeto\Auth\ACL\ACL $acl The ACL manager instance
+     * @param string $role_id The unique identifier of the role
+     * @param array $parents The list of parents of this role
      */
-    public function __construct($role_id, $parents = array())
+    public function __construct(ACL $acl, string $role_id, array $parents = [])
     {
+        parent::__construct($acl);
         if (!is_scalar($role_id))
             throw new Exception("Role-ID must be scalar");
 
-        if (isset(self::$database[static::class][$role_id]))
+        if ($acl->hasInstance(get_class($this), $role_id))
             throw new Exception("Duplicate role: $role_id");
 
         $this->id = $role_id;
         $this->setParents($parents);
-        self::$database[static::class][$role_id] = $this;
+        $acl->setInstance($this);
     }
 }

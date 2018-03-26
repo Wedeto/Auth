@@ -3,7 +3,7 @@
 This is part of Wedeto, the WEb DEvelopment TOolkit.
 It is published under the MIT Open Source License.
 
-Copyright 2017, Egbert van der Wal
+Copyright 2017-2018, Egbert van der Wal
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -26,6 +26,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 namespace Wedeto\Auth\ACL;
 
 use Wedeto\Util\Functions as WF;
+use Wedeto\Util\DI\DI;
 
 /**
  * Base class for Role and Entity that manages the
@@ -35,12 +36,25 @@ abstract class Hierarchy
 {
     /** Associative array of id => element pairs of parent elements */
     protected $parents = array();
+
     /** The ID of the current element */
     protected $id = null;
-    /** Storage for all elements retrieved thusfar */
-    protected static $database = array();
+
     /** Subclasses should define the name of the root element here */
     protected static $root;
+
+    /** The ACL manager instance */
+    protected $_acl = null;
+
+    /**
+     * Construction requires the ACL manager
+     *
+     * @param ACL $acl The ACL to register with
+     */
+    public function __construct(ACL $acl)
+    {
+        $this->_acl = $acl;
+    }
 
     /**
      * @return scalar The ID of the Hierarchy element
@@ -48,6 +62,26 @@ abstract class Hierarchy
     public function getID()
     {
         return $this->id;
+    }
+
+    /**
+     * @return ACL the ACL instance used by this object.
+     */
+    public function getACL()
+    {
+        return $this->_acl;
+    }
+
+    /**
+     * Override the ACL instance used.
+     *
+     * @param ACL $acl The ACL instance to use
+     * @return $this Provides fluent interface
+     */
+    public function setACL(ACL $acl = null)
+    {
+        $this->_acl = $acl;
+        return $this;
     }
 
     /** 
@@ -63,32 +97,34 @@ abstract class Hierarchy
 
     /**
      * Check if the current element is an ancestor of the specified element
+     *
      * @param $element Hierarchy The element to check
-     * @param $loader callable A loader that can be used to load additional instances
+     * @param $loader LoaderInterface A loader instance that can be used to load additional instances
      * @return boolean True when the current Entity is an ancestor of $element, false otherwise
      */
-    public function isAncestorOf(Hierarchy $element, $loader = null)
+    public function isAncestorOf(Hierarchy $element, LoaderInterface $loader = null)
     {
-        return $element->isOffspringOf($this, $loader);
+        return $loader !== null ? $element->isOffspringOf($this, $loader) : $element->isOffpsringOf($this);
     }
 
     /**
      * Check if the current element is offspring of the specified element
+     *
      * @param $role Hierarchy The element to check
-     * @param $loader callable A loader that can be used to load additional instances
+     * @param $loader LoaderInterface A loader that can be used to load additional instances
      * @return integer The number of generation levels between the $this and $element - 0 if they're not related
      */
-    public function isOffspringOf(Hierarchy $element, $loader = null)
+    public function isOffspringOf(Hierarchy $element, LoaderInterface $loader = null)
     {
         if (get_class($element) !== get_class($this))
             return 0;
 
-        $stack = array();
+        $stack = [];
         $parents = $this->getParents($loader);
         foreach ($parents as $p)
-            $stack[] = array(1, $p);
+            $stack[] = [1, $p];
 
-        $seen = array();
+        $seen = [];
         $level = 0;
         while (!empty($stack))
         {
@@ -103,8 +139,9 @@ abstract class Hierarchy
                 return $level;
 
             // Add all parents of this element to the stack
+            $parents = $loader === null ? $cur->getParents() : $cur->getParents($loader);
             foreach ($cur->getParents($loader) as $p)
-                $stack[] = array($level + 1, $p);
+                $stack[] = [$level + 1, $p];
 
             // Store seen entities to avoid cycles
             $seen[$cur->id] = true;
@@ -116,24 +153,32 @@ abstract class Hierarchy
 
     /**
      * Return a list of all parent elements of this element
-     * @param $loader callable A loader that can be used to load additional instances
+     *
+     * @param $loader LoaderInterface A loader that can be used to load additional instances
      * @return array An array of all parent elements
      */
-    public function getParents($loader = null)
+    public function getParents(LoaderInterface $loader = null)
     {
         if (empty($this->parents) && $this->id !== static::$root)
-            $this->parents = [static::getRoot()];
+            $this->parents = [$this->getRoot()];
 
-        $parents = array();
+        $acl = $this->getACL();
+        $parents = [];
         $ids = array_keys($this->parents);
         foreach ($ids as $id)
         {
             if ($this->parents[$id] === null)
             {
-                if (!static::hasInstance($id) && $loader !== null)
-                    $loader($id);
-
-                $this->parents[$id] = static::getInstance($id);
+                if (!$acl->hasInstance($id) && $loader !== null)
+                {
+                    $parent = $loader->load($id, static::class);
+                    $this->getACL()->setInstance($parent);
+                    $this->parents[$id] = $parent;
+                }
+                else
+                {
+                    $this->parents[$id] = $acl->getInstance($id);
+                }
             }
             $parents[] = $this->parents[$id];
         }
@@ -142,15 +187,14 @@ abstract class Hierarchy
 
     /**
      * Set the parent or parents of this element
-     * @param $parents mixed One or more parente elements
+     *
+     * @param $parents array One or more parent elements. The values can be instances of the same
+     *                       class or scalars referring to these instances.
+     * @Return $this Provides fluent interface
      * @throws Wedeto\ACL\Exception When invalid types of parents are specified
      */
-    public function setParents($parents)
+    public function setParents(array $parents)
     {
-        if (!WF::is_array_like($parents))
-            $parents = [$parents];
-
-        $parents = (array)$parents;
         $ownclass = get_class($this);
         $is_root = ($this->id === static::$root);
 
@@ -166,50 +210,24 @@ abstract class Hierarchy
         }
 
         if (empty($this->parents) && !$is_root)
-            $this->parents = [static::getRoot()];
+            $this->parents = [$this->getRoot()];
+
+        return $this;
     }
 
     /**
      * @return Hierarchy Returns the root element of the hierarchy
      */
-    public static function getRoot()
+    public function getRoot()
     {
-        return static::getInstance(static::$root);
+        return $this->getACL()->getInstance(static::$root);
     }
 
     /**
-     * Get an hierarchy element by specifying its ID
+     * @return the identifier of the root object
      */
-    public static function getInstance($element_id)
+    public static function getRootName()
     {
-        $ownclass = get_called_class();
-        if (is_object($element_id) && get_class($element_id) === $ownclass)
-            return $element_id;
-        if (!is_scalar($element_id))
-            throw new Exception("Element-ID must be a scalar");
-
-        if (!isset(self::$database[$ownclass][$element_id]))
-        {
-            if ($element_id === static::$root)
-                self::$database[$ownclass][static::$root] = new $ownclass(static::$root);
-            else
-                throw new Exception("Element-ID '{$element_id}' is unknown for {$ownclass}");
-        }
-
-        return self::$database[$ownclass][$element_id];
-    }
-
-    public static function hasInstance($element_id)
-    {
-        $ownclass = get_called_class();
-        return $element_id === static::$root || isset(self::$database[$ownclass][$element_id]);
-    }
-
-    /**
-     * Clear the cache of elements
-     */
-    public static function clearCache()
-    {
-        self::$database[get_called_class()] = array();
+        return static::$root;
     }
 }

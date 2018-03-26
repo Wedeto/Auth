@@ -46,20 +46,25 @@ class Entity extends Hierarchy
 
     /**
      * Create a new Entity
+     *
+     * @param ACL $acl The ACL to register this entity with
      * @param $entity_id scalar The ID of the entity to construct
      * @param $parent_id mixed The (list of) ID's or Entity objects that are parents
      */
-    public function __construct($entity_id, $parent_id = array())
+    public function __construct(ACL $acl, $entity_id, array $parent_id = [])
     {
+        parent::__construct($acl);
+
         $own_class = get_class($this);
         if (!is_scalar($entity_id))
             throw new Exception("Entity-ID must be a scalar");
-        if (isset(self::$database[$own_class][$entity_id]))
+
+        if ($acl->hasInstance($own_class, $entity_id))
             throw new Exception("Duplicate entity: $entity_id");
 
         $this->id = $entity_id;
         $this->setParents($parent_id);
-        self::$database[$own_class][$entity_id] = $this;
+        $acl->setInstance($this);
     }
 
     /**
@@ -70,32 +75,33 @@ class Entity extends Hierarchy
      * It will obtain the policy based on the rules on this Entity and parent
      * Entities applying to this Role and parent Roles.  If no applicable
      * policy is found, the default policy, as configured in Rule, is returned.
+     *
      * @param $role Role The role that wants to take action
      * @param $action string The action to be performed
-     * @param $loader callable A method that can be used to load additional instances
+     * @param $loader LoaderInterface A loader to load additional entities
      * @return boolean True when the action is allowed, false otherwise
      */
-    public function isAllowed(Role $role, $action, $loader = null)
+    public function isAllowed(Role $role, string $action, LoaderInterface $loader = null)
     {
         $policy = $this->getPolicy($role, $action, $loader);
         if ($policy === Rule::UNDEFINED)
-            $policy = Rule::getDefaultPolicy();
+            $policy = $this->getACL()->getDefaultPolicy();
 
         return $policy === Rule::ALLOW;
     }
 
     /**
      * Find the policy to the Role performing the action on this Entity.
+     *
      * @param $role Role The Role wanting to perform an action
      * @param $action string The action Role wishes to perform
      * @param $loader callable A method that can be used to load additional instances
      * @return integer The policy, either Rule::ALLOW or Rule::DENY.
      */
-    public function getPolicy(Role $role, $action, $loader = null)
+    public function getPolicy(Role $role, string $action, LoaderInterface $loader = null)
     {
         $rules = $this->getRules();
-
-        $pref_policy = Rule::getPreferredPolicy();
+        $pref_policy = $this->getACL()->getPreferredPolicy();
 
         $inherit = true;
         $ancestor_distance = null;
@@ -174,37 +180,19 @@ class Entity extends Hierarchy
     public function getRules()
     {
         if ($this->rules === null)
-            $this->rules = RuleLoader::load($this->id);
+            $this->rules = $this->getACL()->loadRules($this->id);
 
         return $this->rules;
     }
 
     /**
      * Unload the rules. Mainly useful for testing
-     * @return Entity Provides fluent interface
+     *
+     * @return $this Provides fluent interface
      */
     public function resetRules()
     {
         $this->rules = null;
         return $this;
-    }
-
-    /**
-     * Generate a ID based on the provided DAO object
-     */
-    public static function generateID(DAO $dao)
-    {
-        $id = $dao->getID();
-        $fmt_string = "%08s";
-        if (is_array($id))
-            $id = implode("-", $id);
-
-        if (empty($id))
-            throw new Exception("Cannot generate an ID for an empty object");
-
-        $id = substr(sha1($id), 0, 10);
-        $acl_class = $dao->getACLClass();
-
-        return $acl_class . "#" . $id;
     }
 }

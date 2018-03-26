@@ -25,7 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace Wedeto\Auth\ACL;
 
-use Wedeto\DB\Model
+use Wedeto\DB\Model;
 use Wedeto\Util\DI\DI;
 use Wedeot\HTTP\Request;
 
@@ -52,7 +52,7 @@ abstract class ACLModel extends Model
      */
     protected function getParents()
     {
-        return array();
+        return [];
     }
 
     /**
@@ -75,7 +75,7 @@ abstract class ACLModel extends Model
      */
     public function getACLEntity()
     {
-        return $this->acl_entity;
+        return $this->_acl_entity;
     }
     
     /**
@@ -90,7 +90,7 @@ abstract class ACLModel extends Model
      */
     public function isAllowed($action, $role = null)
     {
-        if ($this->acl_entity === null)
+        if ($this->_acl_entity === null)
         {
             return $this->getACL()->getDefaultPolicy(); 
         }
@@ -100,7 +100,7 @@ abstract class ACLModel extends Model
             $role = $this->getACL()->getCurrentRole();
         }
     
-        return $this->acl_entity->isAllowed($role, $action, array(get_class($this), "loadByACLID"));
+        return $this->_acl_entity->isAllowed($role, $action, array(get_class($this), "loadByACLID"));
     }
     
     /**
@@ -113,7 +113,7 @@ abstract class ACLModel extends Model
      */
     public static function getACLClass()
     {
-        $cl = get_called_class();
+        $cl = static::class;
         $parts = explode("\\", $cl);
     
         if (count($parts) === 1)
@@ -136,12 +136,34 @@ abstract class ACLModel extends Model
             return;
         
         // Generate the ACL ID
-        $id = Entity::generateID($this);
+        $id = $this->generateID($this);
+        $acl = $this->getACL();
     
         // Retrieve or obtain the appropriate ACL
-        if (!(Entity::hasInstance($id)))
-            $this->acl_entity = new Entity($id, $this->getParents());
+        if (!($acl->hasInstance($id)))
+            $this->_acl_entity = $acl->createEntity($id, $this->getParents(), $this);
         else
-            $this->acl_entity = Entity::getInstance($id);
+            $this->_acl_entity = $acl->getInstance($id);
+    }
+
+    /**
+     * Generate a ID based on the provided Model object
+     */
+    public function generateID()
+    {
+        $id = $this->getID();
+        $fmt_string = "%08s";
+        if (is_array($id))
+            $id = implode("-", $id);
+        else
+            $id = sprintf($fmt_string, $id);
+
+        if (empty($id))
+            throw new Exception("Cannot generate an ID for an empty object");
+
+        $id = substr(sha1($id), 0, 10);
+        $acl_class = $this->getACLClass();
+
+        return $acl_class . "#" . $id;
     }
 }
