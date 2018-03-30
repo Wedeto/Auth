@@ -35,15 +35,15 @@ class HierarchyTest extends TestCase
 {
     public function setUp()
     {
-        MockHierarchy::clearCache();
-        Mock2Hierarchy::clearCache();
+        $rl = $this->prophesize(RuleLoaderInterface::class);
+        $this->acl = new ACL($rl->reveal());
     }
 
     public function testConstructionAndComparison()
     {
-        $one = new MockHierarchy('one');
-        $two = new MockHierarchy('two');
-        $one_dup = new MockHierarchy('one');
+        $one = new MockHierarchy($this->acl, 'one');
+        $two = new MockHierarchy($this->acl, 'two');
+        $one_dup = new MockHierarchy($this->acl, 'one');
 
         $this->assertEquals('one', $one->getID());
         $this->assertEquals('two', $two->getID());
@@ -54,34 +54,21 @@ class HierarchyTest extends TestCase
         $this->assertFalse($two->is($one));
 
         // Test differing classes
-        $other = new Mock2Hierarchy('one');
+        $other = new Mock2Hierarchy($this->acl, 'one');
         $this->assertFalse($other->is($one));
         $this->assertFalse($other->is($two));
         $this->assertFalse($other->is($one_dup));
         $this->assertTrue($other->is($other));
 
         // Test that getInstance is no-op when provided with a hierarchy
-        $this->assertSame($one, MockHierarchy::getInstance($one));
+        $this->assertSame($one, $this->acl->getInstance(MockHierarchy::class, $one));
         
-        // Test that getInstance throws exception when differing class of parameter
-        $thrown = false;
-        try
-        {
-            Hierarchy::getInstance($one);
-        }
-        catch (ACLException $e)
-        {
-            $this->assertContains('must be a scalar', $e->getMessage());
-            $thrown = true;
-        }
-        $this->assertTrue($thrown);
+        $this->assertSame($one_dup, $this->acl->getInstance(MockHierarchy::class, 'one'));
+        $this->assertSame($two, $this->acl->getInstance(MockHierarchy::class, 'two'));
 
-        $this->assertSame($one_dup, MockHierarchy::getInstance('one'));
-        $this->assertSame($two, MockHierarchy::getInstance('two'));
-
-        $root = MockHierarchy::getInstance('MOCKROOT');
+        $root = $this->acl->getInstance(MockHierarchy::class, 'MOCKROOT');
         $this->assertInstanceOf(MockHierarchy::class, $root);
-        $this->assertSame(MockHierarchy::getRoot(), $root);
+        $this->assertSame($one->getRoot(), $root);
 
         
         $thrown = false;
@@ -110,17 +97,17 @@ class HierarchyTest extends TestCase
 
     public function testAncestry()
     {
-        $a1 = new MockHierarchy('a1');
-        $a2 = new MockHierarchy('a2');
-        $b1 = new MockHierarchy('b1');
-        $b2 = new MockHierarchy('b2');
+        $a1 = new MockHierarchy($this->acl, 'a1');
+        $a2 = new MockHierarchy($this->acl, 'a2');
+        $b1 = new MockHierarchy($this->acl, 'b1');
+        $b2 = new MockHierarchy($this->acl, 'b2');
 
-        $c = new MockHierarchy('c');
-        $d = new MockHierarchy('d');
+        $c = new MockHierarchy($this->acl, 'c');
+        $d = new MockHierarchy($this->acl, 'd');
 
-        $other = new Mock2Hierarchy('d');
+        $other = new Mock2Hierarchy($this->acl, 'd');
 
-        $root = MockHierarchy::getRoot();
+        $root = $c->getRoot();
 
         $a2->setParents('a1');
         $b2->setParents($b1);
@@ -208,20 +195,16 @@ class HierarchyTest extends TestCase
 
     public function testGetParentsWithLoader()
     {
-        $i1 = new MockHierarchy('foo');
+        $i1 = new MockHierarchy($this->acl, 'foo');
         $i1->setParents(['bar']);
 
         $counter = new \stdClass;
         $counter->cnt = 0;
 
-        $loader = function ($id) use ($counter) {
-            ++$counter->cnt;
-            return new MockHierarchy($id);
-        };
-
+        $loader = new MockRuleLoader();
         $parents = $i1->getParents($loader);
 
-        $this->assertEquals(1, $counter->cnt);
+        $this->assertEquals(1, $loader->cnt);
         $this->assertEquals(1, count($parents));
         $this->assertEquals('bar', $parents[0]->getID());
     }
@@ -231,10 +214,10 @@ class MockHierarchy extends Hierarchy
 {
     protected static $root = 'MOCKROOT';
 
-    public function __construct($id)
+    public function __construct(ACL $acl, $id)
     {
         $this->id = $id;
-        self::$database[__CLASS__][$id] = $this;
+        $acl->setInstance($this);
     }
 }
 
@@ -242,9 +225,20 @@ class Mock2Hierarchy extends Hierarchy
 {
     protected static $root = 'MOCKROOT';
 
-    public function __construct($id)
+    public function __construct(ACL $acl, $id)
     {
         $this->id = $id;
-        self::$database[__CLASS__][$id] = $this;
+        $acl->setInstance($this);
+    }
+}
+
+class MockRuleLoader implements LoaderInterface
+{
+    public $counter = 0;
+
+    function load($id, string $class)
+    {
+        ++$this->counter;
+        return new MockHierarchy($this->acl, $id);
     }
 }

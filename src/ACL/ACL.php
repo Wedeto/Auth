@@ -65,7 +65,7 @@ class ACL
      */
     public function setRuleLoader(RuleLoaderInterface $loader)
     {
-        $this->rule_loader = $rule_loader;
+        $this->rule_loader = $loader;
         return $this;
     }
 
@@ -102,6 +102,14 @@ class ACL
     }
 
     /**
+     * @return ActionValidator The validator instance. May be null to stick to default actions
+     */
+    public function getActionValidator()
+    {
+        return $this->action_validator;
+    }
+
+    /**
      * Set the default policy which is applied when no rule
      * specifies a definitive answer.
      * @param $policy scalar Either one of (Rule::ALLOW, Rule::DENY) or one
@@ -110,19 +118,7 @@ class ACL
      */
     public function setDefaultPolicy($policy)
     {
-        if (is_string($policy))
-        {
-            $policy = trim(strtoupper($policy));
-            if ($policy === "ALLOW")
-                $policy = Rule::ALLOW;
-            elseif ($policy === "DENY")
-                $policy = Rule::DENY;
-        }
-
-        if (!($policy === Rule::ALLOW || $policy === Rule::DENY))
-            throw new Exception("Default policy should be either Rule::ALLOW or Rule::DENY"); 
-
-        $this->default_policy = $policy;
+        $this->default_policy = Rule::parsePolicy($policy, true);
         return $this;
     }
 
@@ -143,19 +139,7 @@ class ACL
      */
     public function setPreferredPolicy($policy)
     {
-        if (is_string($policy))
-        {
-            $policy = trim(strtoupper($policy));
-            if ($policy === "ALLOW")
-                $policy = Rule::ALLOW;
-            elseif ($policy === "DENY")
-                $policy = Rule::DENY;
-        }
-
-        if (!($policy === Rule::ALLOW || $policy === Rule::DENY))
-            throw new Exception("Preferred policy should be either Rule::ALLOW or Rule::DENY"); 
-
-        $this->preferred_policy = $policy;
+        $this->preferred_policy = Rule::parsePolicy($policy, true);
     }
 
     /**
@@ -200,9 +184,9 @@ class ACL
 
         if (!$this->hasInstance($class, $element_id))
         {
-            $root = $class::$root;
+            $root = $class::getRootName();
             if ($element_id === $root)
-                $this->hierarchy[$class][$root] = new $class($root);
+                $this->hierarchy[$class][$root] = new $class($this, $root);
             else
                 throw new Exception("Element-ID '{$element_id}' is unknown for {$ownclass}");
         }
@@ -213,7 +197,7 @@ class ACL
     /**
      * @return Hierarchy Instance of element
      */
-    public function hasInstance(string $class, $element_id)
+    public function hasInstance(string $class, string $element_id)
     {
         return isset($this->hierarchy[$class][$element_id]);
     }
@@ -227,7 +211,7 @@ class ACL
     public function setInstance(Hierarchy $element)
     {
         $class = get_class($element);
-        $this->hierarchy[$class][$element->id] = $element;
+        $this->hierarchy[$class][$element->getID()] = $element;
         return $this;
     }
 

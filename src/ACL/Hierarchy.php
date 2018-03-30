@@ -169,15 +169,15 @@ abstract class Hierarchy
         {
             if ($this->parents[$id] === null)
             {
-                if (!$acl->hasInstance($id) && $loader !== null)
+                if (!$acl->hasInstance(static::class, $id) && $loader !== null)
                 {
                     $parent = $loader->load($id, static::class);
-                    $this->getACL()->setInstance($parent);
+                    $acl->setInstance($parent);
                     $this->parents[$id] = $parent;
                 }
                 else
                 {
-                    $this->parents[$id] = $acl->getInstance($id);
+                    $this->parents[$id] = $acl->getInstance(static::class, $id);
                 }
             }
             $parents[] = $this->parents[$id];
@@ -220,7 +220,7 @@ abstract class Hierarchy
      */
     public function getRoot()
     {
-        return $this->getACL()->getInstance(static::$root);
+        return $this->getACL()->getInstance(static::class, static::$root);
     }
 
     /**

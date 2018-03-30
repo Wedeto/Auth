@@ -37,8 +37,8 @@ class EntityTest extends TestCase
 {
     public function setUp()
     {
-        Entity::clearCache();
-        Role::clearCache();
+        $rl = $this->prophesize(RuleLoaderInterface::class);
+        $this->acl = new ACL($rl->reveal());
     }
 
     public function testConstructionWithIDWorks()

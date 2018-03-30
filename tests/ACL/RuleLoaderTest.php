@@ -30,33 +30,17 @@ use PHPUnit\Framework\TestCase;
 use Wedeto\Auth\ACL\Exception as ACLException;
 
 /**
- * @covers Wedeto\Auth\ACL\RuleLoader
+ * @covers Wedeto\Auth\ACL\RuleLoaderInterface
  */
 class RuleLoaderTest extends TestCase
 {
-    public function setUp()
-    {
-        RuleLoader::setLoader();
-    }
-
-    public function tearDown()
-    {
-        RuleLoader::setLoader();
-    }
-
     public function testSetRuleLoader()
     {
-        RuleLoader::setLoader(new MockRuleLoaderInterfaceImplementation);
+        $rl = new MockRuleLoaderInterfaceImplementation;
+        $this->acl = new ACL($rl);
 
-        $rules = RuleLoader::load('foobar');
+        $rules = $this->acl->loadRules('foobar');
         $this->assertEquals(['foo', 'bar'], $rules);
-    }
-
-    public function testNoSetRuleLoaderThrowsException()
-    {
-        $this->expectException(ACLException::class);
-        $this->expectExceptionMessage('You need to set the loader before loading rules');
-        RuleLoader::load('foobar');
     }
 }
 

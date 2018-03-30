@@ -56,6 +56,9 @@ class Rule
     /** WRITE: Write permission on an entity */
     const WRITE = "WRITE";
 
+    /** The ACL instance managing the configuration */
+    protected $acl;
+
     /** The ID of the entity this rule applies to */
     protected $entity_id;
 
@@ -83,14 +86,15 @@ class Rule
     /**
      * Create the object providing entity, role, action and policy.
      *
-     * @param $entity_id scalar|Entity The Entity this rule applies to
-     * @param $role_id scalar|Role The Role this rule applies to
-     * @param $action scalar The action on the Entity this rule has a policy on
-     * @param $policy integer One of Rule::UNDEFINED, Rule::ALLOW or Rule::DENY
+     * @param scalar|Entity $entity_id scalar|Entity The Entity this rule applies to
+     * @param scalar|Role $role_id scalar|Role The Role this rule applies to
+     * @param string $action The action on the Entity this rule has a policy on
+     * @param int $policy One of Rule::UNDEFINED, Rule::ALLOW or Rule::DENY
      * @throws Wedeto\ACL\Exception When one of the setters throws an exception
      */
-    public function __construct($entity_id, $role_id, string $action, int $policy)
+    public function __construct(ACL $acl, $entity_id, $role_id, string $action, int $policy)
     {
+        $this->acl = $acl;
         $this->setEntity($entity_id);
         $this->setRole($role_id);
         $this->setAction($action);
@@ -101,7 +105,7 @@ class Rule
     /**
      * Set the role this Rule applies to. 
      *
-     * @param $role_id scalar|Role Either a Role object or a Role-ID
+     * @param scala|Role $role_id Either a Role object or a Role-ID
      * @throws Wedeto\ACL\Exception When the role is not a Role object or a scalar
      */
     public function setRole($role_id)
@@ -127,7 +131,7 @@ class Rule
     /**
      * Set the entity this Rule applies to
      * 
-     * @param $entity_id scalar|Entity Either a Entity object or a Role-ID
+     * @param scalar|Entity $entity_id Either a Entity object or a Role-ID
      * @throws Wedeto\ACL\Exception When the entity is not a Entity object or a scalar
      */
     public function setEntity($entity_id)
@@ -153,7 +157,7 @@ class Rule
     public function getEntity()
     {
         if ($this->entity === null)
-            $this->entity = Entity::getInstance($this->entity_id);
+            $this->entity = $this->acl->getInstance(Entity::class, $this->entity_id);
         return $this->entity;
     }
 
@@ -163,7 +167,7 @@ class Rule
     public function getRole()
     {
         if ($this->role === null)
-            $this->role = Role::getInstance($this->role_id);
+            $this->role = $this->acl->getInstance(Role::class, $this->role_id);
         return $this->role;
     }
 
@@ -174,13 +178,13 @@ class Rule
      */
     public function setPolicy(int $policy)
     {
-        if (!($policy === Rule::ALLOW || $policy === Rule::DENY || $policy === Rule::INHERIT || $policy == Rule::NOINHERIT))
+        if (!($policy === Rule::ALLOW || $policy === Rule::DENY || $policy === Rule::INHERIT || $policy === Rule::NOINHERIT))
             throw new Exception("Policy must be either Rule::ALLOW, Rule::DENY, Rule::INHERIT or Rule::NOINHERIT");
 
-        if ($policy == Rule::NOINHERIT && !empty($this->action))
+        if ($policy === Rule::NOINHERIT && !empty($this->action))
             throw new Exception("Rule::NOINHERIT can not be used in combination with an action");
 
-        if ($policy == Rule::NOINHERIT && !empty($this->role_id))
+        if ($policy === Rule::NOINHERIT && !empty($this->role_id))
             throw new Exception("Rule::NOINHERIT can not be used in combination with a role");
 
         if ($policy !== $this->policy)
@@ -203,9 +207,10 @@ class Rule
         $action = (string)$action;
         if ($action !== $this->action)
         {
-            if (self::$action_validator !== null)
+            $validator = $this->acl->getActionValidator();
+            if (null !== $validator)
             {
-                if (($reason = self::$action_validator->isValid($action)) !== true)
+                if (($reason = $validator->isValid($action)) !== true)
                     throw new Exception("Action can not be validated: " . $reason);
             }
             $this->changed = true;
@@ -215,8 +220,8 @@ class Rule
 
     /**
      * Magic getter for all properties of this Rule.
-     * @param $field scalar The property to return
-     * @return The value for the property
+     * @param scalar $field The property to return
+     * @return mixed The value for the property
      * @throws Wedeto\ACL\Exception When the field does not exist
      */
     public function __get(string $field)
@@ -242,7 +247,7 @@ class Rule
 
     /**
      * Set the record associated to this rule
-     * @param $record mixed Data to be associated with this rule
+     * @param mixed $record Data to be associated with this rule
      * @return Rule Provides fluent interface
      */
     public function setRecord($record)
@@ -251,4 +256,43 @@ class Rule
         return $this;
     }
 
+    /**
+     * Normalize the policy - a string of ALLOW will be convered to the
+     * constant Rule::ALLOW and a string of DENY will be converted to
+     * Rule::DENY. If the value is already an int, it should be one of those
+     * values.  If the value is invalid, an ACL\Exception is thrown.
+     * 
+     * @param string|int $policy ALLOW or DENY, or Rule::ALLOW or Rule::DENY
+     * @param bool $explicit Whether to require an explicit policy: either ALLOW or DENY. When this is false,
+     *                       non-explicit policies (UNDEFINED, INHERIT, NOINHERIT) are permittable).
+     * @return int Either Rule::ALLOW or Rule::DENY
+     * @throws Wedeto\Auth\ACL\Exception When the value is invalid
+     */
+    public static function parsePolicy($policy, bool $explicit = false)
+    {
+        if (is_string($policy))
+        {
+            $policy = trim(strtoupper($policy));
+            $const_name = static::class . "::" . $policy;
+
+            if (defined($const_name))
+                $policy = constant($const_name);
+        }
+
+        $valid = [Rule::ALLOW, Rule::DENY];
+        if ($explicit && !in_array($policy, $valid, true))
+            throw new Exception("Policy should be either Rule::ALLOW or Rule::DENY"); 
+
+        $valid[] = Rule::UNDEFINED;
+        $valid[] = Rule::INHERIT;
+        $valid[] = Rule::NOINHERIT;
+        if (!in_array($policy, $valid, true))
+        {
+            throw new Exception(
+                "Policy should be one of Rule::ALLOW, Rule::DENY, Rule::UNDEFINED, Rule::INHERIT or Rule::NOINHERIT"
+            ); 
+        }
+
+        return $policy;
+    }
 }

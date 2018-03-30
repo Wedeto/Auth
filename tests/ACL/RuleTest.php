@@ -36,22 +36,22 @@ class RuleTest extends TestCase
 {
     public function setUp()
     {
-        Entity::clearCache();
-        Role::clearCache();
-        Rule::setActionValidator();
+        $rl = $this->prophesize(RuleLoaderInterface::class);
+        $this->rule_loader = $rl->reveal();
+        $this->acl = new ACL($this->rule_loader);
     }
 
     public function testRuleSetup()
     {
-        $obj = new Entity("object");
-        $obj2 = new Entity("object2");
-        $user = new Role("user");
-        $user2 = new Role("user2");
+        $obj = new Entity($this->acl, "object");
+        $obj2 = new Entity($this->acl, "object2");
+        $user = new Role($this->acl, "user");
+        $user2 = new Role($this->acl, "user2");
 
-        $r1 = new Rule("object", "user", Rule::READ, Rule::ALLOW);
-        $r2 = new Rule("object", Role::getRoot(), Rule::WRITE, Rule::DENY);
-        $r3 = new Rule("object", $user2, Rule::READ, Rule::ALLOW);
-        $r4 = new Rule($obj2, "user2", Rule::READ, Rule::ALLOW);
+        $r1 = new Rule($this->acl, "object", "user", Rule::READ, Rule::ALLOW);
+        $r2 = new Rule($this->acl, "object", $user->getRoot(), Rule::WRITE, Rule::DENY);
+        $r3 = new Rule($this->acl, "object", $user2, Rule::READ, Rule::ALLOW);
+        $r4 = new Rule($this->acl, $obj2, "user2", Rule::READ, Rule::ALLOW);
 
         $this->assertInstanceOf(Rule::class, $r1);
         $this->assertInstanceOf(Rule::class, $r2);
@@ -70,7 +70,7 @@ class RuleTest extends TestCase
         $this->assertInstanceOf(Role::class, $r2->getRole());
         $this->assertEquals('EVERYONE', $r2->getRole()->getID());
         $this->assertSame($r2->getEntity(), $r2->entity);
-        $this->assertSame($r2->getRole(), Role::getRoot());
+        $this->assertSame($r2->getRole(), $user->getRoot());
         $this->assertEquals(Rule::WRITE, $r2->action);
         $this->assertEquals(Rule::DENY, $r2->policy);
 
@@ -98,9 +98,9 @@ class RuleTest extends TestCase
         $val = new MockActionValidator;
         $val->setResult(true);
 
-        Rule::setActionValidator($val);
+        $this->acl->setActionValidator($val);
         
-        $rule = new Rule("object", "user", Rule::READ, Rule::ALLOW);
+        $rule = new Rule($this->acl, "object", "user", Rule::READ, Rule::ALLOW);
         $this->assertEquals(1, $val->call_count);
 
         $val->setResult(false);
@@ -111,10 +111,10 @@ class RuleTest extends TestCase
 
     public function testInvalidField()
     {
-        $obj = new Entity("object");
-        $user = new Role("user");
+        $obj = new Entity($this->acl, "object");
+        $user = new Role($this->acl, "user");
 
-        $rule = new Rule($obj, $user, Rule::READ, Rule::ALLOW); 
+        $rule = new Rule($this->acl, $obj, $user, Rule::READ, Rule::ALLOW); 
         $this->expectException(ACLException::class);
         $this->expectExceptionMessage("Invalid field for Rule: foo");
         $rule->foo;
@@ -122,40 +122,40 @@ class RuleTest extends TestCase
 
     public function testDefaultAndPreferredPolicy()
     {
-        Rule::setDefaultPolicy(Rule::ALLOW);
-        Rule::setPreferredPolicy(Rule::ALLOW);
-        $this->assertEquals(Rule::ALLOW, Rule::getDefaultPolicy());
-        Rule::setDefaultPolicy(Rule::DENY);
-        Rule::setPreferredPolicy(Rule::ALLOW);
-        $this->assertEquals(Rule::DENY, Rule::getDefaultPolicy());
+        $this->acl->setDefaultPolicy(Rule::ALLOW);
+        $this->acl->setPreferredPolicy(Rule::ALLOW);
+        $this->assertEquals(Rule::ALLOW, $this->acl->getDefaultPolicy());
+        $this->acl->setDefaultPolicy(Rule::DENY);
+        $this->acl->setPreferredPolicy(Rule::ALLOW);
+        $this->assertEquals(Rule::DENY, $this->acl->getDefaultPolicy());
 
-        Rule::setPreferredPolicy(Rule::ALLOW);
-        Rule::setDefaultPolicy(Rule::ALLOW);
-        $this->assertEquals(Rule::ALLOW, Rule::getPreferredPolicy());
-        Rule::setPreferredPolicy(Rule::DENY);
-        Rule::setDefaultPolicy(Rule::ALLOW);
-        $this->assertEquals(Rule::DENY, Rule::getPreferredPolicy());
+        $this->acl->setPreferredPolicy(Rule::ALLOW);
+        $this->acl->setDefaultPolicy(Rule::ALLOW);
+        $this->assertEquals(Rule::ALLOW, $this->acl->getPreferredPolicy());
+        $this->acl->setPreferredPolicy(Rule::DENY);
+        $this->acl->setDefaultPolicy(Rule::ALLOW);
+        $this->assertEquals(Rule::DENY, $this->acl->getPreferredPolicy());
 
-        Rule::setDefaultPolicy("DENY");
-        $this->assertEquals(Rule::DENY, Rule::getDefaultPolicy());
+        $this->acl->setDefaultPolicy("DENY");
+        $this->assertEquals(Rule::DENY, $this->acl->getDefaultPolicy());
 
-        Rule::setDefaultPolicy("ALLOW");
-        $this->assertEquals(Rule::ALLOW, Rule::getDefaultPolicy());
+        $this->acl->setDefaultPolicy("ALLOW");
+        $this->assertEquals(Rule::ALLOW, $this->acl->getDefaultPolicy());
 
-        Rule::setPreferredPolicy("DENY");
-        $this->assertEquals(Rule::DENY, Rule::getPreferredPolicy());
+        $this->acl->setPreferredPolicy("DENY");
+        $this->assertEquals(Rule::DENY, $this->acl->getPreferredPolicy());
 
-        Rule::setPreferredPolicy("ALLOW");
-        $this->assertEquals(Rule::ALLOW, Rule::getPreferredPolicy());
+        $this->acl->setPreferredPolicy("ALLOW");
+        $this->assertEquals(Rule::ALLOW, $this->acl->getPreferredPolicy());
 
         $thrown = false;
         try
         {
-            Rule::setDefaultPolicy("FOO");
+            $this->acl->setDefaultPolicy("FOO");
         }
         catch (ACLException $e)
         {
-            $this->assertContains("Default policy should be either Rule::ALLOW or Rule::DENY", $e->getMessage());
+            $this->assertContains("Policy should be either Rule::ALLOW or Rule::DENY", $e->getMessage());
             $thrown = true;
         }
         $this->assertTrue($thrown);
@@ -163,11 +163,11 @@ class RuleTest extends TestCase
         $thrown = false;
         try
         {
-            Rule::setPreferredPolicy("FOO");
+            $this->acl->setPreferredPolicy("FOO");
         }
         catch (ACLException $e)
         {
-            $this->assertContains("Preferred policy should be either Rule::ALLOW or Rule::DENY", $e->getMessage());
+            $this->assertContains("Policy should be either Rule::ALLOW or Rule::DENY", $e->getMessage());
             $thrown = true;
         }
         $this->assertTrue($thrown);
@@ -175,7 +175,7 @@ class RuleTest extends TestCase
 
     public function testGetSetRecord()
     {
-        $rule = new Rule("object", "user", Rule::READ, Rule::ALLOW);
+        $rule = new Rule($this->acl, "object", "user", Rule::READ, Rule::ALLOW);
         $data = new \stdClass;
         $this->assertSame($rule, $rule->setRecord($data));
         $this->assertSame($data, $rule->getRecord());
@@ -185,19 +185,19 @@ class RuleTest extends TestCase
     {
         $this->expectException(ACLException::class);
         $this->expectExceptionMessage("Rule::NOINHERIT can not be used in combination with a role");
-        $rule = new Rule("object", "user", "", Rule::NOINHERIT);
+        $rule = new Rule($this->acl, "object", "user", "", Rule::NOINHERIT);
     }
 
     public function testConstructingWithActionAndNoInheritThrowsException()
     {
         $this->expectException(ACLException::class);
         $this->expectExceptionMessage("Rule::NOINHERIT can not be used in combination with an action");
-        $rule = new Rule("object", "", Rule::READ, Rule::NOINHERIT);
+        $rule = new Rule($this->acl, "object", "", Rule::READ, Rule::NOINHERIT);
     }
 
     public function testSettingRoleOnNoInheritRuleThrowsException()
     {
-        $rule = new Rule("object", "", "", Rule::NOINHERIT);
+        $rule = new Rule($this->acl, "object", "", "", Rule::NOINHERIT);
 
         $this->expectException(ACLException::class);
         $this->expectExceptionMessage("Rule::NOINHERIT can not be used in combination with a role");
@@ -206,7 +206,7 @@ class RuleTest extends TestCase
 
     public function testSettingActionOnNoInheritRuleThrowsException()
     {
-        $rule = new Rule("object", "", "", Rule::NOINHERIT);
+        $rule = new Rule($this->acl, "object", "", "", Rule::NOINHERIT);
 
         $this->expectException(ACLException::class);
         $this->expectExceptionMessage("Rule::NOINHERIT can not be used in combination with an action");
@@ -217,14 +217,14 @@ class RuleTest extends TestCase
     {
         $this->expectException(ACLException::class);
         $this->expectExceptionMessage("Role-ID must be a Role or a scalar");
-        $rule = new Rule("object", [], "", Rule::NOINHERIT);
+        $rule = new Rule($this->acl, "object", [], "", Rule::NOINHERIT);
     }
 
     public function testSettingInvalidEntityTypeThrowsException()
     {
         $this->expectException(ACLException::class);
         $this->expectExceptionMessage("Entity-ID must be an Entity or a scalar");
-        $rule = new Rule([], "user", "", Rule::NOINHERIT);
+        $rule = new Rule($this->acl, [], "user", "", Rule::NOINHERIT);
     }
 
     public function testSettingValidAndInvalidPolicies()
@@ -253,7 +253,7 @@ class RuleTest extends TestCase
             {
                 $thrown = true;
             }
-            $this->assertEquals(!$valid, $thrown);
+            $this->assertEquals(!$valid, $thrown, "Policy $pol should be " . $valid ? "true" : "false");
         }
     }
 }

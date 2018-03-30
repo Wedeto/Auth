@@ -44,8 +44,6 @@ class Role extends Hierarchy
     public function __construct(ACL $acl, string $role_id, array $parents = [])
     {
         parent::__construct($acl);
-        if (!is_scalar($role_id))
-            throw new Exception("Role-ID must be scalar");
 
         if ($acl->hasInstance(get_class($this), $role_id))
             throw new Exception("Duplicate role: $role_id");

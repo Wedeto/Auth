@@ -51,7 +51,7 @@ class Entity extends Hierarchy
      * @param $entity_id scalar The ID of the entity to construct
      * @param $parent_id mixed The (list of) ID's or Entity objects that are parents
      */
-    public function __construct(ACL $acl, $entity_id, array $parent_id = [])
+    public function __construct(ACL $acl, string $entity_id, array $parent_id = [])
     {
         parent::__construct($acl);
 

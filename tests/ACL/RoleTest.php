@@ -36,13 +36,14 @@ class RoleTest extends TestCase
 {
     public function setUp()
     {
-        Role::clearCache();
+        $rl = $this->prophesize(RuleLoaderInterface::class);
+        $this->acl = new ACL($rl->reveal());
     }
 
     public function testBasicConstruction()
     {
-        $user = new Role('user');
-        $group = new Role('group');
+        $user = new Role($this->acl, 'user');
+        $group = new Role($this->acl, 'group');
 
         $user->setParents(['group']);
 
@@ -50,19 +51,12 @@ class RoleTest extends TestCase
         $this->assertSame([$group], $parents);
     }
 
-    public function testNonScalarIDThrowsException()
-    {
-        $this->expectException(ACLException::class);
-        $this->expectExceptionMessage("Role-ID must be scalar");
-        $user = new Role([]);
-    }
-
     public function testDuplicateIDThrowsException()
     {
-        $user = new Role('user');
+        $user = new Role($this->acl, 'user');
 
         $this->expectException(ACLException::class);
         $this->expectExceptionMessage('Duplicate role: user');
-        $user2 = new Role('user');
+        $user2 = new Role($this->acl, 'user');
     }
 }
