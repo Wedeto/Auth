@@ -32,6 +32,8 @@ use Wedeto\DB\DAO;
 
 /**
  * @covers Wedeto\Auth\ACL\Entity
+ * @covers Wedeto\Auth\ACL\Hierarchy
+ * @covers Wedeto\Auth\ACL\ACL
  */
 class EntityTest extends TestCase
 {

@@ -30,6 +30,7 @@ use Wedeto\Auth\ACL\Exception as ACLException;
 
 /**
  * @covers Wedeto\Auth\ACL\Hierarchy
+ * @covers Wedeto\Auth\ACL\ACL
  */
 class HierarchyTest extends TestCase
 {

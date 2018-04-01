@@ -31,6 +31,8 @@ use Wedeto\Auth\ACL\Exception as ACLException;
 
 /**
  * @covers Wedeto\Auth\ACL\Role
+ * @covers Wedeto\Auth\ACL\Hierarchy
+ * @covers Wedeto\Auth\ACL\ACL
  */
 class RoleTest extends TestCase
 {

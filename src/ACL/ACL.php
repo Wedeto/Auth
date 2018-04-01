@@ -25,10 +25,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace Wedeto\Auth\ACL;
 
-use Wedeto\DB\ACLRule;
+use Wedeto\DB\DB;
 
 /**
- * A RuleLoader that loads rules from the database using the Model\ACLRule class;
+ * Manager of the ACL system - the link between all the parts.
  */
 class ACL
 {
@@ -86,7 +86,7 @@ class ACL
     public function registerClass(string $class, string $name)
     {
         if (isset($this->classes[$name]))
-            throw new \RuntimeException("Cannot register the same name twice");
+            throw new Exception("Cannot register the same name twice");
     
         $this->classes[$name] = $class;
         $this->classes_names[$class] = $name;
@@ -157,15 +157,18 @@ class ACL
     {
         $parts = explode("#", $id);
         if (count($parts) !== 2)
-            throw new \RuntimeException("Invalid DAO ID: {$id}");
+            throw new Exception("Invalid DAO ID: {$id}");
     
-        if (!isset(self::$classes[$parts[0]]))
-            throw new \RuntimeException("Invalid DAO type: {$parts[0]}");
+        if (!isset($this->classes[$parts[0]]))
+            throw new Exception("Invalid DAO type: {$parts[0]}");
     
-        $classname = self::$classes[$parts[0]];
-        $pkey_values = explode("-", $id);
+        $classname = $this->classes[$parts[0]];
+        $pkey_values = explode("-", $parts[1]);
+
+        $db = DB::getInstance();
+        $dao = $db->getDAO($classname);
     
-        return call_user_func(array($classname, "get"), $pkey_values);
+        return call_user_func(array($dao, "get"), $pkey_values);
     }
 
     /**
