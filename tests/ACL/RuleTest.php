@@ -27,6 +27,7 @@ namespace Wedeto\Auth\ACL;
 
 use PHPUnit\Framework\TestCase;
 
+use Wedeto\Util\Functions as WF;
 use Wedeto\Auth\ACL\Exception as ACLException;
 
 /**
@@ -243,7 +244,7 @@ class RuleTest extends TestCase
             $thrown = false;
             try
             {
-                $rule = new Rule("object", "", "", $pol);
+                $rule = new Rule($this->acl, "object", "", "", $pol);
             }
             catch (ACLException $e)
             {

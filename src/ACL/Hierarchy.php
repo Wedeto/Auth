@@ -104,7 +104,7 @@ abstract class Hierarchy
      */
     public function isAncestorOf(Hierarchy $element, LoaderInterface $loader = null)
     {
-        return $loader !== null ? $element->isOffspringOf($this, $loader) : $element->isOffpsringOf($this);
+        return $loader !== null ? $element->isOffspringOf($this, $loader) : $element->isOffspringOf($this);
     }
 
     /**
@@ -163,6 +163,8 @@ abstract class Hierarchy
             $this->parents = [$this->getRoot()];
 
         $acl = $this->getACL();
+        if (null === $acl)
+            throw new \RuntimeException("ACL is null on " . get_class($this));
         $parents = [];
         $ids = array_keys($this->parents);
         foreach ($ids as $id)

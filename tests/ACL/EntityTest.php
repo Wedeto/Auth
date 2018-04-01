@@ -43,59 +43,59 @@ class EntityTest extends TestCase
 
     public function testConstructionWithIDWorks()
     {
-        $entity = new Entity('foo');
+        $entity = new Entity($this->acl, 'foo');
         $this->assertEquals('foo', $entity->getID());
 
-        $entity = new Entity('bar');
+        $entity = new Entity($this->acl, 'bar');
         $this->assertEquals('bar', $entity->getID());
     }
 
     public function testConstructWithNonScalar()
     {
-        $this->expectException(ACLException::class);
-        $this->expectExceptionMessage("Entity-ID must be a scalar");
-        $entity = new Entity(['foo']);
+        $this->expectException(\TypeError::class);
+        $this->expectExceptionMessage("must be of the type string, array given");
+        $entity = new Entity($this->acl, ['foo']);
     }
 
     public function testDuplicateConstructionThrowsException()
     {
-        $foo1 = new Entity('foo');
+        $foo1 = new Entity($this->acl, 'foo');
 
         $this->expectException(ACLException::class);
         $this->expectExceptionMessage("Duplicate entity: foo");
-        $foo2 = new Entity('foo');
+        $foo2 = new Entity($this->acl, 'foo');
     }
 
     public function testGenerateID()
     {
-        $mock = new MockDAO(123);
-        $id = Entity::generateID($mock);
+        $mock = new MockModel(123);
+        $id = $mock->generateID($mock);
         $sum = substr(sha1('123'), 0, 10);
-        $this->assertEquals('Wedeto_MockDAO#' . $sum, $id, 'Unexpected ID for integer ID');
+        $this->assertEquals('Wedeto_MockModel#' . $sum, $id, 'Unexpected ID for integer ID');
 
-        $mock = new MockDAO('foobar');
-        $id = Entity::generateID($mock);
+        $mock = new MockModel('foobar');
+        $id = $mock->generateID($mock);
         $sum = substr(sha1('foobar'), 0, 10);
-        $this->assertEquals('Wedeto_MockDAO#' . $sum, $id, 'Unexpected ID for string ID');
+        $this->assertEquals('Wedeto_MockModel#' . $sum, $id, 'Unexpected ID for string ID');
 
-        $mock = new MockDAO(['123', '456']);
-        $id = Entity::generateID($mock);
+        $mock = new MockModel(['123', '456']);
+        $id = $mock->generateID($mock);
         $sum = substr(sha1('123-456'), 0, 10);
-        $this->assertEquals('Wedeto_MockDAO#' . $sum, $id, 'Unexpected ID for multi-valued ID');
+        $this->assertEquals('Wedeto_MockModel#' . $sum, $id, 'Unexpected ID for multi-valued ID');
 
-        $mock = new MockDAO(null);
+        $mock = new MockModel(null);
         $this->expectException(ACLException::class);
         $this->expectExceptionMessage("Cannot generate an ID for an empty object");
-        $id = Entity::generateID($mock);
+        $id = $mock->generateID($mock);
     }
 
     public function testIsAllowed()
     {
         $loader = new MockEntityTestRuleLoader();
-        RuleLoader::setLoader($loader);
+        $this->acl->setRuleLoader($loader);
 
-        $role = new Role('user');
-        $entity = new Entity('foo');
+        $role = new Role($this->acl, 'user');
+        $entity = new Entity($this->acl, 'foo');
 
         $this->assertFalse($entity->isAllowed($role, Rule::READ));
         $this->assertFalse($entity->isAllowed($role, Rule::WRITE));
@@ -103,32 +103,32 @@ class EntityTest extends TestCase
 
     public function testGetPolicy()
     {
-        $user1 = new Role("user1");
-        $user2 = new Role("user2");
-        $user3 = new Role("user3");
+        $user1 = new Role($this->acl, "user1");
+        $user2 = new Role($this->acl, "user2");
+        $user3 = new Role($this->acl, "user3");
 
-        $file = new Entity("file");
-        $folder = new Entity("folder");
+        $file = new Entity($this->acl, "file");
+        $folder = new Entity($this->acl, "folder");
 
-        $group = new Role("group1");
+        $group = new Role($this->acl, "group1");
 
-        $user1->setParents($group);
-        $user2->setParents($group);
-        $file->setParents($folder);
+        $user1->setParents([$group]);
+        $user2->setParents([$group]);
+        $file->setParents([$folder]);
 
         $rules = [
             "folder" => [
-                new Rule($folder, Role::getRoot(), Rule::READ, Rule::ALLOW),
+                new Rule($this->acl, $folder, $this->acl->getRoot(Role::class), Rule::READ, Rule::ALLOW),
             ],
             "file" => [
-                new Rule($file, $group, Rule::WRITE, Rule::ALLOW),
-                new Rule($file, $user1, Rule::WRITE, Rule::DENY)
+                new Rule($this->acl, $file, $group, Rule::WRITE, Rule::ALLOW),
+                new Rule($this->acl, $file, $user1, Rule::WRITE, Rule::DENY)
             ]
         ];
 
         $loader = new MockEntityTestRuleLoader();
         $loader->setMockRules($rules);
-        RuleLoader::setLoader($loader);
+        $this->acl->setRuleLoader($loader);
 
         $this->assertEquals(Rule::ALLOW, $file->getPolicy($user1, Rule::READ));
         $this->assertEquals(Rule::DENY, $file->getPolicy($user1, Rule::WRITE));
@@ -142,19 +142,19 @@ class EntityTest extends TestCase
         $this->assertTrue($file->isAllowed($user3, Rule::READ));
 
         // This one has no rule, so it depends on the default policy
-        Rule::setDefaultPolicy(Rule::ALLOW);
+        $this->acl->setDefaultPolicy(Rule::ALLOW);
         $this->assertTrue($file->isAllowed($user3, Rule::WRITE));
 
-        Rule::setDefaultPolicy(Rule::DENY);
+        $this->acl->setDefaultPolicy(Rule::DENY);
         $this->assertFalse($file->isAllowed($user3, Rule::WRITE));
         
         // Check preferred policy setting
-        $group2 = new Role("group2");
+        $group2 = new Role($this->acl, "group2");
         $user2->setParents([$group, $group2]);
         
         // User 2 is child of group 1 and group 2. Group 1 allows write access
         // to file, so add a rule that denies group 2 from write access
-        $rules['file'][] = new Rule($file, $group2, Rule::WRITE, Rule::DENY);
+        $rules['file'][] = new Rule($this->acl, $file, $group2, Rule::WRITE, Rule::DENY);
         $loader->setMockRules($rules);
 
         $file->resetRules();
@@ -162,46 +162,46 @@ class EntityTest extends TestCase
 
         // Now the outcome is determined by the preferred policy
         // First, prefer ALLOW
-        Rule::setPreferredPolicy(Rule::ALLOW);
+        $this->acl->setPreferredPolicy(Rule::ALLOW);
         $this->assertTrue($file->isAllowed($user2, Rule::WRITE));
 
         // Now, prefer DENY
-        Rule::setPreferredPolicy(Rule::DENY);
+        $this->acl->setPreferredPolicy(Rule::DENY);
         $this->assertFalse($file->isAllowed($user2, Rule::WRITE));
     }
 
     public function testInheritance()
     {
-        $user1 = new Role("user1");
-        $user2 = new Role("user2");
-        $user3 = new Role("user3");
+        $user1 = new Role($this->acl, "user1");
+        $user2 = new Role($this->acl, "user2");
+        $user3 = new Role($this->acl, "user3");
 
-        $file = new Entity("file");
-        $folder = new Entity("folder");
+        $file = new Entity($this->acl, "file");
+        $folder = new Entity($this->acl, "folder");
 
-        $group = new Role("group1");
+        $group = new Role($this->acl, "group1");
 
-        $user1->setParents($group);
-        $user2->setParents($group);
-        $user3->setParents($group);
-        $file->setParents($folder);
+        $user1->setParents([$group]);
+        $user2->setParents([$group]);
+        $user3->setParents([$group]);
+        $file->setParents([$folder]);
 
-        $rule1 = new Rule($file, "", "", Rule::NOINHERIT);
+        $rule1 = new Rule($this->acl, $file, "", "", Rule::NOINHERIT);
         $rules = [
             "folder" => [
-                new Rule($folder, Role::getRoot(), Rule::READ, Rule::ALLOW),
-                new Rule($file, $group, Rule::WRITE, Rule::ALLOW),
+                new Rule($this->acl, $folder, $this->acl->getRoot(Role::class), Rule::READ, Rule::ALLOW),
+                new Rule($this->acl, $file, $group, Rule::WRITE, Rule::ALLOW),
             ],
             "file" => [
                 $rule1,
-                new Rule($file, $user1, Rule::WRITE, Rule::DENY),
-                new Rule($file, $user2, Rule::WRITE, Rule::ALLOW)
+                new Rule($this->acl, $file, $user1, Rule::WRITE, Rule::DENY),
+                new Rule($this->acl, $file, $user2, Rule::WRITE, Rule::ALLOW)
             ]
         ];
 
         $loader = new MockEntityTestRuleLoader();
         $loader->setMockRules($rules);
-        RuleLoader::setLoader($loader);
+        $this->acl->setRuleLoader($loader);
 
         $this->assertEquals(Rule::DENY, $file->getPolicy($user1, Rule::WRITE));
         $this->assertEquals(Rule::ALLOW, $file->getPolicy($user2, Rule::WRITE));
@@ -214,7 +214,7 @@ class EntityTest extends TestCase
     }
 }
 
-class MockDAO extends DAO
+class MockModel extends ACLModel
 {
     protected $id;
 

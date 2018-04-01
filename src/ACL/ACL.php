@@ -188,10 +188,26 @@ class ACL
             if ($element_id === $root)
                 $this->hierarchy[$class][$root] = new $class($this, $root);
             else
-                throw new Exception("Element-ID '{$element_id}' is unknown for {$ownclass}");
+                throw new Exception("Element-ID '{$element_id}' is unknown for {$class}");
         }
 
         return $this->hierarchy[$class][$element_id];
+    }
+
+    /**
+     * Return the root element for a certain hierarchy
+     *
+     * @param string $class The class name
+     * @return Hierarchy The root element of the hierarchy
+     * @throws Wedeto\Auth\ACL\Exception When an invalid class is passed
+     */
+    public function getRoot(string $class)
+    {
+        if (!is_a($class, Hierarchy::class, true))
+            throw new Exception("Not a subclass of Hierarchy: $class");
+
+        $root = $class::getRootName();
+        return $this->getInstance($class, $root);
     }
 
     /**

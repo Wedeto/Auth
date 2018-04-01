@@ -155,8 +155,6 @@ abstract class ACLModel extends Model
         $fmt_string = "%08s";
         if (is_array($id))
             $id = implode("-", $id);
-        else
-            $id = sprintf($fmt_string, $id);
 
         if (empty($id))
             throw new Exception("Cannot generate an ID for an empty object");
