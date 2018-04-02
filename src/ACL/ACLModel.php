@@ -131,19 +131,25 @@ abstract class ACLModel extends Model
      */
     protected function initACL()
     {
-        // We cannot generate ACL's for object without a ID
-        if ($this->id === null)
-            return;
-        
         // Generate the ACL ID
-        $id = $this->generateID($this);
+        try
+        {
+            $id = $this->generateID($this);
+        }
+        catch (Exception $e)
+        {
+            if ($e->getMessage() == "Cannot generate an ID for an empty object")
+                return;
+            throw $e;
+        }
+
         $acl = $this->getACL();
     
         // Retrieve or obtain the appropriate ACL
-        if (!($acl->hasInstance($id)))
-            $this->_acl_entity = $acl->createEntity($id, $this->getParents(), $this);
+        if (!($acl->hasEntity($id)))
+            $this->_acl_entity = $acl->createEntity($id, $this->getParents());
         else
-            $this->_acl_entity = $acl->getInstance($id);
+            $this->_acl_entity = $acl->getEntity($id);
     }
 
     /**

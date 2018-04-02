@@ -27,10 +27,11 @@ namespace Wedeto\Auth\ACL;
 
 use PHPUnit\Framework\TestCase;
 
-use Wedeto\Auth\ACL\Exception as ACLException;
 use Wedeto\DB\DB;
 use Wedeto\DB\DAO;
 use Wedeto\Util\DI\DI;
+
+use TypeError;
 
 /**
  * @covers Wedeto\Auth\ACL\ACL
@@ -67,7 +68,6 @@ class ACLTest extends TestCase
         $db_mock = $this->prophesize(DB::class);
         $db = $db_mock->reveal();
         
-
         $dao_mock = $this->prophesize(DAO::class);
         $dao_mock->get(['bar'])->willReturn(new ACLTestACLModelMock($acl));
         $dao = $dao_mock->reveal();
@@ -82,10 +82,86 @@ class ACLTest extends TestCase
 
         $this->assertInstanceOf(ACLTestAclModelMock::class, $entity);
 
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage("Invalid DAO ID: foobar");
+        $acl->loadByACLID('foobar');
+    }
+
+    public function testLoadWithUnregisteredClassName()
+    {
+        $acl = new ACL($this->rl);
+        $acl->registerClass(ACLTestACLModelMock::class, 'foo');
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage("Invalid DAO type: bar");
+        $acl->loadByACLID('bar#foo');
+
+    }
+
+    public function testRegisterNonModelClassThrowsException()
+    {
+        $acl = new ACL($this->rl);
+
+        $this->assertSame($acl, $acl->registerClass(ACLTestACLModelMock::class, "foo"));
+
+        $this->expectException(TypeError::class);
+        $this->expectExceptionMessage("must be subclass of ACLModel");
+        $acl->registerClass(\stdClass::class, "bar");
+    }
+
+    public function testRegisterClassTwiceThrowsException()
+    {
+        $acl = new ACL($this->rl);
+
+        $this->assertSame($acl, $acl->registerClass(ACLTestACLModelMock::class, "foo"));
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage("Cannot register the same name twice");
+        $this->assertSame($acl, $acl->registerClass(ACLTestACLModelMock::class, "foo"));
+    }
+
+    public function testActionValidator()
+    {
+        $mocker = $this->prophesize(ActionValidatorInterface::class);
+        $av = $mocker->reveal();
+
+        $acl = new ACL($this->rl);
+        $this->assertSame($acl, $acl->setActionValidator($av));
+        $this->assertSame($av, $acl->getActionValidator());
+
+    }
+
+    public function testGetInstanceWithInvalidClassThrowsException()
+    {
+        $acl = new ACL($this->rl);
+        
+        $this->expectException(TypeError::class);
+        $this->expectExceptionMessage("Not a subclass of Hierarchy");
+        $acl->getInstance(\stdClass::class, "1");
+    }
+
+    public function testGetInstanceWithInvalidIDThrowsException()
+    {
+        $acl = new ACL($this->rl);
+        
+        $this->expectException(TypeError::class);
+        $this->expectExceptionMessage("Element-ID must be a scalar");
+        $acl->getInstance(ACLTestMockHierarchy::class, ["foo"]);
+    }
+
+    public function testGetRootOfInvalidHierarchy()
+    {
+        $acl = new ACL($this->rl);
+        $this->expectException(TypeError::class);
+        $this->expectExceptionMessage("Not a subclass of Hierarchy");
+        $acl->getRoot(\stdClass::class);
     }
 }
 
-class ACLTestACLModelMock extends Hierarchy
+class ACLTestACLModelMock extends ACLModel
 {
     public static $test_dao = null;
 }
+
+class ACLTestMockHierarchy extends Hierarchy
+{}

@@ -26,6 +26,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 namespace Wedeto\Auth\ACL;
 
 use Wedeto\DB\DB;
+use TypeError;
 
 /**
  * Manager of the ACL system - the link between all the parts.
@@ -37,6 +38,9 @@ class ACL
     
     /** Mapping of class names to entity names */
     protected $classes_names = [];
+
+    /** The role of the current user. Used when not specified explicity */
+    protected $current_role = null;
 
     /** The default policy when no policy applies */
     protected $default_policy = Rule::DENY;
@@ -56,6 +60,7 @@ class ACL
     public function __construct(RuleLoaderInterface $loader)
     {
         $this->setRuleLoader($loader);
+        $this->current_role = $this->getRoot(Role::class);
     }
 
     /**
@@ -82,14 +87,18 @@ class ACL
      *
      * @param string $class The name of the class
      * @param string $name The name of the ACL objects
+     * @return $this Provides fluent interface
      */
     public function registerClass(string $class, string $name)
     {
         if (isset($this->classes[$name]))
             throw new Exception("Cannot register the same name twice");
+        if (!is_a($class, ACLModel::class, true))
+            throw new TypeError("Class must be subclass of ACLModel");
     
         $this->classes[$name] = $class;
         $this->classes_names[$class] = $name;
+        return $this;
     }
 
     /**
@@ -177,13 +186,13 @@ class ACL
     public function getInstance(string $class, $element_id)
     {
         if (!is_a($class, Hierarchy::class, true))
-            throw new Exception("Not a subclass of Hierarchy: $class");
+            throw new TypeError("Not a subclass of Hierarchy: $class");
 
         if (is_object($element_id) && get_class($element_id) === $class)
             return $element_id;
 
         if (!is_scalar($element_id))
-            throw new Exception("Element-ID must be a scalar");
+            throw new TypeError("Element-ID must be a scalar");
 
         if (!$this->hasInstance($class, $element_id))
         {
@@ -207,10 +216,22 @@ class ACL
     public function getRoot(string $class)
     {
         if (!is_a($class, Hierarchy::class, true))
-            throw new Exception("Not a subclass of Hierarchy: $class");
+            throw new TypeError("Not a subclass of Hierarchy: $class");
 
         $root = $class::getRootName();
         return $this->getInstance($class, $root);
+    }
+
+    /**
+     * Create a new entity and store it.
+     * @param string $entity_id The ID of the entity
+     * @param array $parents The parents of the entity
+     * @throws Exception When the entity_id has already been created for this class
+     */
+    public function createEntity(string $entity_id, array $parents)
+    {
+        $entity = new Entity($this, $entity_id, $parents);
+        return $entity;
     }
 
     /**
@@ -219,6 +240,28 @@ class ACL
     public function hasInstance(string $class, string $element_id)
     {
         return isset($this->hierarchy[$class][$element_id]);
+    }
+
+    /**
+     * Check if a specific entity has been created yet.
+     *
+     * @param string $entity_id The ID of the entity to check
+     * @return bool True of the entity was already created, false if not
+     */
+    public function hasEntity(string $entity_id)
+    {
+        return $this->hasInstance(Entity::class, $entity_id);
+    }
+
+    /**
+     * Get a specific entity that was already created
+     * 
+     * @param string $entity_id The entity ID
+     * @return Entity The entity instance
+     */
+    public function getEntity(string $entity_id)
+    {
+        return $this->getInstance(Entity::class, $entity_id);
     }
 
     /**
@@ -242,6 +285,26 @@ class ACL
      */
     public function loadRules(string $entity_id)
     {
-        return $this->rule_loader->loadRules($entity_id);
+        return $this->rule_loader->loadRules($entity_id) ?: [];
+    }
+
+    /**
+     * @return Role The Role of the current user
+     */
+    public function getCurrentRole()
+    {
+        return $this->current_role;
+    }
+
+    /**
+     * Set the Role of the current user
+     *
+     * @param Role $role The Role of the current user
+     * @return $this Provides fluent interface
+     */
+    public function setCurrentRole(Role $role)
+    {
+        $this->current_role = $role;
+        return $this;
     }
 }

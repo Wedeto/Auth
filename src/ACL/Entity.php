@@ -78,12 +78,11 @@ class Entity extends Hierarchy
      *
      * @param $role Role The role that wants to take action
      * @param $action string The action to be performed
-     * @param $loader LoaderInterface A loader to load additional entities
      * @return boolean True when the action is allowed, false otherwise
      */
-    public function isAllowed(Role $role, string $action, LoaderInterface $loader = null)
+    public function isAllowed(Role $role, string $action)
     {
-        $policy = $this->getPolicy($role, $action, $loader);
+        $policy = $this->getPolicy($role, $action);
         if ($policy === Rule::UNDEFINED)
             $policy = $this->getACL()->getDefaultPolicy();
 
@@ -95,10 +94,9 @@ class Entity extends Hierarchy
      *
      * @param $role Role The Role wanting to perform an action
      * @param $action string The action Role wishes to perform
-     * @param $loader callable A method that can be used to load additional instances
      * @return integer The policy, either Rule::ALLOW or Rule::DENY.
      */
-    public function getPolicy(Role $role, string $action, LoaderInterface $loader = null)
+    public function getPolicy(Role $role, string $action)
     {
         $rules = $this->getRules();
         $pref_policy = $this->getACL()->getPreferredPolicy();
@@ -129,7 +127,7 @@ class Entity extends Hierarchy
                 return $rule->policy;
 
             // Find the closest matching parent
-            if (($distance = $rule->role->isAncestorOf($role, $loader)) > 0)
+            if (($distance = $rule->role->isAncestorOf($role)) > 0)
             {
                 // Always select the closest parent that has a defined rule.
                 // When there are several conflicting rules, applying to the
@@ -159,11 +157,11 @@ class Entity extends Hierarchy
         }
 
         // Inherit from the parents
-        $parents = $this->getParents($loader);
+        $parents = $this->getParents();
         $policy = Rule::UNDEFINED;
         foreach ($parents as $parent)
         {
-            $policy = $parent->getPolicy($role, $action, $loader);
+            $policy = $parent->getPolicy($role, $action);
             // If an Entity has multiple parents, just one of them needs to
             // allow the action to allow it on this Entity.
             if ($policy === $pref_policy)
