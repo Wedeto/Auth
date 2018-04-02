@@ -26,31 +26,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 namespace Wedeto\Auth\Model;
 
 use Wedeto\Auth\UserInterface;
-use Wedeto\Auth\ACL\ACLModel;
-use Wedeto\DB\Query\Builder as QB;
+use Wedeto\DB\Model;
 
 /**
- * A class that corresponds to a user, providing a method to find a user using
- * username or e-mail address. To use it, subclass it and add the table name to
- * provide the correct table name.
+ * A Wedeto-DB Rule table. It can be used to store the ACL rules in the
+ * database.
  */
-abstract class User extends ACLModel implements UserInterface
+class ACLRule extends Model
 {
-    public function obtainFromLogin(string $username, string $password)
-    {
-        $record = $this->getDAO()->fetchSingle(
-            QB::where(
-                QB::or(
-                    QB::equals('username', $username),
-                    QB::equals('email', $username)
-                )
-            )
-        );
-
-        if (empty($record))
-            return false;
-
-        $this->assignRecord($record);
-        return true;
-    }
+    protected static $table = "acl_rule";
 }

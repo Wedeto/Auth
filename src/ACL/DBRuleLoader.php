@@ -25,7 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace Wedeto\Auth\ACL;
 
-use Wedeto\DB\ACLRule;
+use Wedeto\Auth\Model\ACLRule;
 
 /**
  * A RuleLoader that loads rules from the database using the Model\ACLRule class;
@@ -37,7 +37,7 @@ class DBRuleLoader implements RuleLoaderInterface
      */
     public function loadRules(string $entity_id)
     {
-        $records = ACLRule::get(array("entity_id" => $entity_id));
+        $records = ACLRule::get(["entity_id" => $entity_id]);
         $rules = array();
         foreach ($records as $record)
         {
