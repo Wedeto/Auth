@@ -14,7 +14,7 @@ $table = new Table(
     new Column\Smallint('policy'),
     new Column\Datetime('last_modified'),
     new Index(Index::PRIMARY, 'id'),
-    new Index(Index::UNIQUE, 'entity', 'role', 'action')
+    new Index(Index::UNIQUE, 'entity_id', 'role_id', 'action')
 );
 
 $db->getDriver()->createTable($table);
