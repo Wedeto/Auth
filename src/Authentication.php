@@ -53,14 +53,9 @@ class Authentication
      * Construct the authentication object using a configuration.
      * @param array $config An array or array-like object to get configuration from
      */
-    public function __construct($config)
+    public function __construct(AuthConfiguration $config)
     {
-        $config = new Dictionary($config);
-
-        if ($config->has('auth', Type::ARRAY))
-            $this->config = $config->getSection('auth');
-        else
-            $this->config = $config;
+        $this->config = $config;
     }
     
     /**
