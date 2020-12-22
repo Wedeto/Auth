@@ -5,12 +5,11 @@
     "homepage": "https://wedeto.net/",
     "type": "library",
     "require": {
-        "wedeto/util": "~1.0.0-beta1",
-        "wedeto/http": "~1.0.0-beta1",
-        "wedeto/db": "~1.0.0-beta1",
+        "wedeto/util": "~1.0.0",
+        "wedeto/http": "~1.0.0",
+        "wedeto/db": "~1.0.0",
         "php": ">=7.0.0"
     },
-    "minimum-stability": "beta",
     "autoload": {
         "psr-4": {
             "Wedeto\\Auth\\": "src/"
